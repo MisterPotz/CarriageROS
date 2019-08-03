@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <!-- ARGS -->
+  <arg name="gui" default="true"/>
+  <arg name="rvizconfig" default="$(find configs)/carriage_rviz.rviz" />
+
+  <!-- PARAMS -->
+  <param name="use_gui" value="$(arg gui)"/>
+  <!--param name="robot_description" command="$(find xacro)/xacro '$(find bot)/src/model/bot.xacro'"/-->
+  <param name="robot_description" command="$(find xacro)/xacro '$(find model)/bot.xacro'"/>
+
+  <!-- ADDITIONAL FILES -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="worlds/empty_world.world"/> <!-- Note: the world_name is with respect to GAZEBO_RESOURCE_PATH environmental variable -->
+    <arg name="paused" value="true"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui" value="$(arg gui)"/>
+    <arg name="recording" value="false"/>
+    <arg name="debug" value="false"/>
+  </include>
+
+  <!-- ADDITIONAL NODES -->
+  <node name="bot_spawn" pkg="gazebo_ros" type="spawn_model" output="screen"
+   args="-urdf -param robot_description -model bot -z 0.4" />
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+
+  <!-- we don't need the following line as long as gazebo plugin publishes the states of wheels /-->
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
+  
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)"  required="true" />
+
+  <!-- node for twist commands from keyboard, runs in the same terminal -->
+  <!--node name="teleop" pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py"/-->
+
+  <!-- NAVIGATION NODE -->
+
+    <!-- Odometry frame is fixed with map -->
+  <!--node pkg="tf" type="static_transform_publisher" name="map_odom_broadcaster"
+    args="0 0 0 0 0 0 map odom 100"/-->
+
+
+</launch>

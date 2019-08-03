@@ -10,13 +10,15 @@
   </xacro:macro>
 
 <!-- BASE_LINK PARAMETERS -->
-  <xacro:property name="bot_mass" value="30.0"/>
+  <xacro:property name="bot_mass" value="300.0"/>
   <xacro:property name="bot_width" value="0.75"/>
   <xacro:property name="bot_height" value="0.5"/>
   <xacro:property name="distance_between_wheels" value="0.6"/>
   <xacro:property name="wheel_diameter" value="0.1" />
   <xacro:property name="below_offset_btwn_base_wheel" value="0.02"/>
   <xacro:property name="wheel_thickness" value="0.02"/>
+  <xacro:property name="wheel_mass" value="0.2"/> 
+
 
   <xacro:macro name="base_geometry">
     <geometry>
@@ -25,7 +27,7 @@
   </xacro:macro>
   
   <xacro:macro name="default_inertia">
-    <inertia ixx="0.6" ixy="0" ixz="0" iyy="0.65" iyz="0" izz="0.21"/>
+    <inertia ixx="4" ixy="0" ixz="0" iyy="4" iyz="0" izz="2"/>
   </xacro:macro>
 
 
@@ -62,51 +64,75 @@
         joint_origin - the location of where the slider joint is attached (should be at the very edge of the bottom
         of the base_link-->
   <xacro:macro name="wheel" params="name *wheel_orientation *joint_orientation *joint_origin">
-    <joint name="${name}_base_joint" type="prismatic">
-      <parent link="base_link"/>
-      <child link="${name}_base_joint"/>
-      <limit effort="1000.0" lower="${-below_offset_btwn_base_wheel}" upper="${wheel_diameter}" velocity="0.2"/>
-      <xacro:insert_block name="joint_origin"/>
-      <axis xyz="0 0 1" rpy="0 0 0" />
-    </joint>
-
-    <joint name="${name}_wheel_joint" type="continuous">
-      <xacro:insert_block name="joint_orientation"/>
-      <parent link="${name}_base_joint"/>
-      <child link="${name}_wheel"/>
-      <!--xacro:insert_block name="origin_wheel"/-->
-      <!-- commented because origin of the wheels should be aligned with origin of the sliders -->
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-    </joint>
-
-    <link name="${name}_wheel">
-      <visual>
-        <material name="black">
-          <color rgba="0 0 0 1"/>
-        </material>
-        <xacro:wheel_geometry_common/>
-        <xacro:insert_block name="wheel_orientation"/>
-      </visual>
-      <collision>
-        <xacro:wheel_geometry_common/>
-        <xacro:insert_block name="wheel_orientation"/>
-      </collision>
+    <link name="btwn_base_and_${name}wheel">
       <inertial>
-        <xacro:wheel_geometry_common/>
-        <xacro:insert_block name="wheel_orientation"/>
-        <mass value="${wheel_mass}"/>
-        <xacro:wheel_inertia/>
+        <mass value="${wheel_mass/3}" />
+        <origin xyz="0 0 0" />
+        <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
       </inertial>
     </link>
+    <joint name="${name}_base_joint" type="prismatic">
+        <parent link="base_link"/>
+        <child link="btwn_base_and_${name}wheel"/>
+        <limit effort="100.0" lower="${-below_offset_btwn_base_wheel}" upper="${wheel_diameter}" velocity="100"/>
+        <xacro:insert_block name="joint_origin"/>
+        <axis xyz="0 0 1" rpy="0 0 0" />
+        <dynamics damping="0.7" friction="100000"/>
+        <safety_controller soft_lower_limit="-0.01"  soft_upper_limit="0.09" k_position="1" k_velocity="1"/>
+      </joint>
+    <link name="${name}_wheel">
+        <visual>
+          <material name="black">
+            <color rgba="0 0 0 1"/>
+          </material>
+          <xacro:wheel_geometry_common/>
+          <xacro:insert_block name="wheel_orientation"/>
+        </visual>
+        <collision>
+          <xacro:wheel_geometry_common/>
+          <xacro:insert_block name="wheel_orientation"/>
+        </collision>
+        <inertial>
+          <xacro:wheel_geometry_common/>
+          <xacro:insert_block name="wheel_orientation"/>
+          <mass value="${wheel_mass}"/>
+          <xacro:wheel_inertia/>
+        </inertial>
+    </link>
+    
+    <joint name="${name}_wheel_joint" type="continuous">
+        <xacro:insert_block name="joint_orientation"/>
+        <parent link="btwn_base_and_${name}wheel"/>
+        <child link="${name}_wheel"/>
+        <!--xacro:insert_block name="origin_wheel"/-->
+        <!-- commented because origin of the wheels should be aligned with origin of the sliders -->
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+    
+    
       <!-- GAZEBO settings for wheels -->
     <gazebo reference="${name}_wheel">
       <mu1>1000000.0</mu1>
       <mu2>1000000.0</mu2>
       <minDepth>0.0001 </minDepth>
-      <fdir1 value = "1 0 0"/>
+      <fdir1 value = "1 1 0"/>
       <kp>100000.0</kp>
       <kd>100000 </kd>
       <material>Gazebo/Black</material>
+      <selfCollide>0</selfCollide>
+      <gravity>0</gravity>
+    </gazebo>
+
+    <gazebo reference="btwn_base_and_${name}wheel">
+        <mu1>1000000.0</mu1>
+        <mu2>1000000.0</mu2>
+        <minDepth>0.0001 </minDepth>
+        <fdir1 value = "1 0 0"/>
+        <kp>100000.0</kp>
+        <kd>100000 </kd>
+        <material>Gazebo/Black</material>
+        <selfCollide>0</selfCollide>
+        <gravity>0</gravity>
     </gazebo>
   </xacro:macro>
 
@@ -119,6 +145,7 @@
     <inertial>
       <mass value="${bot_mass}"/>
       <xacro:default_inertia/>
+      <xacro:base_geometry/>
     </inertial>
 
     <collision name='collision'>
@@ -134,51 +161,67 @@
 
   <!-- WHEELS -->
   
-  <xacro:wheel name="1y">
-    <xacro:insert_block name="wheel_orientation_y"/>
-    <xacro:insert_block name="joint_axis_y"/>
+   <xacro:wheel name="1y">
+    <xacro:wheel_orientation_y/>
+    <xacro:joint_axis_y/>
     <origin xyz="${bot_width/2} ${-distance_between_wheels/2} ${-bot_height/2}" rpy="0 0 0"/>
   </xacro:wheel>
 
   <xacro:wheel name="2y">
-    <xacro:insert_block name="wheel_orientation_y"/>
-    <xacro:insert_block name="joint_axis_y"/>
+      <xacro:wheel_orientation_y/>
+      <xacro:joint_axis_y/>
     <origin xyz="${bot_width/2} ${distance_between_wheels/2} ${-bot_height/2}" rpy="0 0 0"/>
   </xacro:wheel>
   <xacro:wheel name="3y">
-    <xacro:insert_block name="wheel_orientation_y"/>
-    <xacro:insert_block name="joint_axis_y"/>
+      <xacro:wheel_orientation_y/>
+      <xacro:joint_axis_y/>
     <origin xyz="${-bot_width/2} ${-distance_between_wheels/2} ${-bot_height/2}" rpy="0 0 0"/>
   </xacro:wheel>
   <xacro:wheel name="4y">
-    <xacro:insert_block name="wheel_orientation_y"/>
-    <xacro:insert_block name="joint_axis_y"/>
+      <xacro:wheel_orientation_y/>
+      <xacro:joint_axis_y/>
     <origin xyz="${-bot_width/2} ${distance_between_wheels/2} ${-bot_height/2}" rpy="0 0 0"/>
   </xacro:wheel>
   <xacro:wheel name="5x">
-    <xacro:insert_block name="wheel_orientation_x"/>
-    <xacro:insert_block name="joint_axis_x"/>
+    <xacro:wheel_orientation_x/>
+    <xacro:joint_axis_x/>
     <origin xyz="${distance_between_wheels/2} ${bot_width/2 } ${-bot_height/2}" rpy="0 0 0"/>
   </xacro:wheel>
   <xacro:wheel name="6x">
-    <xacro:insert_block name="wheel_orientation_x"/>
-    <xacro:insert_block name="joint_axis_x"/>
+      <xacro:wheel_orientation_x/>
+      <xacro:joint_axis_x/>
     <origin xyz="${-distance_between_wheels/2} ${bot_width/2 } ${-bot_height/2}" rpy="0 0 0"/>
   </xacro:wheel>
   <xacro:wheel name="7x">
-    <xacro:insert_block name="wheel_orientation_x"/>
-    <xacro:insert_block name="joint_axis_x"/>
+      <xacro:wheel_orientation_x/>
+      <xacro:joint_axis_x/>
     <origin xyz="${distance_between_wheels/2} ${-bot_width/2 } ${-bot_height/2}" rpy="0 0 0"/>
   </xacro:wheel>
   <xacro:wheel name="8x">
-    <xacro:insert_block name="wheel_orientation_x"/>
-    <xacro:insert_block name="joint_axis_x"/>
+      <xacro:wheel_orientation_x/>
+      <xacro:joint_axis_x/>
     <origin xyz="${-distance_between_wheels/2} ${-bot_width/2 } ${-bot_height/2}" rpy="0 0 0"/>
   </xacro:wheel>
 
+
+
+
+  <gazebo reference="base_link">
+      <mu1>1000000.0</mu1>
+      <mu2>1000000.0</mu2>
+      <minDepth>0.0001 </minDepth>
+      <fdir1 value = "1 0 0"/>
+      <kp>100000.0</kp>
+      <kd>100000 </kd>
+      <material>Gazebo/Black</material>
+      <selfCollide>false</selfCollide>
+      <gravity>true</gravity>
+  </gazebo>
+
+
   <!-- LIDAR -->
 
-  <joint name="lidar_joint" type="fixed">
+  <!-- <joint name="lidar_joint" type="fixed">
     <axis xyz="0 0 0" />
     <origin xyz="${bot_length*6/7} 0 ${bot_height}" rpy="0 0 0"/>
     <parent link="base_link"/>
@@ -204,9 +247,9 @@
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6" />
     </inertial>
-  </link>
+  </link>  -->
   <!-- GAZEBO PLUGINS -->
-  <gazebo>
+  <!-- <gazebo>
     <plugin name="differential_drive_controller" filename="libgazebo_ros_diff_drive.so">
       <alwaysOn>true</alwaysOn>
       <publishTf>1</publishTf>
@@ -224,20 +267,9 @@
       <publishWheelTF>true</publishWheelTF>
       <publishWheelJointState>true</publishWheelJointState>
     </plugin>
-  </gazebo>
+  </gazebo> -->
 
-  <gazebo reference="ball">
-    <kp>1000000.0</kp>
-    <kd>10000</kd>
-    <dampingFactor>0.0</dampingFactor>
-    <mu1>0.00</mu1>
-    <mu2>0.00</mu2>
-    <fdir1 value = "1 0 0"/>
-    <maxVel>15.0</maxVel>
-    <material>Gazebo/Red</material>
-  </gazebo> 
-
-  <gazebo reference="lidar">
+  <!-- <gazebo reference="lidar">
     <sensor type="ray" name="head_hokuyo_sensor_front">
       <pose>0 0 0 0 0 0</pose>
       <visualize>true</visualize>
@@ -249,7 +281,6 @@
             <resolution>1</resolution>
             <min_angle>-1.3</min_angle>
             <max_angle>1.3</max_angle>
-            <!-- 1.570796 -->
           </horizontal>
         </scan>
         <range>
@@ -259,10 +290,6 @@
         </range>
         <noise>
           <type>gaussian</type>
-          <!-- Noise parameters based on published spec for Hokuyo laser
-               achieving "+-30mm" accuracy at range < 10m.  A mean of 0.0m and
-               stddev of 0.01m will put 99.7% of samples within 0.03m of the true
-               reading. -->
           <mean>0.0</mean>
           <stddev>0.01</stddev>
         </noise>
@@ -272,5 +299,5 @@
         <frameName>lidar</frameName>
       </plugin>
     </sensor>
-  </gazebo>
+  </gazebo> -->
 </robot>
