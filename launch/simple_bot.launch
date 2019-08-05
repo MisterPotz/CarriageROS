@@ -9,6 +9,9 @@
   <!--param name="robot_description" command="$(find xacro)/xacro '$(find bot)/src/model/bot.xacro'"/-->
   <param name="robot_description" command="$(find xacro)/xacro '$(find model)/bot.xacro'"/>
 
+  <!-- Load all available controllers -->
+  <rosparam file="$(find controllers)/controllers.yaml" command="load"/>
+
   <!-- ADDITIONAL FILES -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="world_name" value="worlds/empty_world.world"/> <!-- Note: the world_name is with respect to GAZEBO_RESOURCE_PATH environmental variable -->
@@ -21,13 +24,18 @@
 
   <!-- ADDITIONAL NODES -->
   <node name="bot_spawn" pkg="gazebo_ros" type="spawn_model" output="screen"
-   args="-urdf -param robot_description -model bot -z 0.4" />
+   args="-urdf -param robot_description -model bot -z 0.7" />
+
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
 
   <!-- we don't need the following line as long as gazebo plugin publishes the states of wheels /-->
-  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
+  <!-- <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/> -->
   
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)"  required="true" />
+  <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)"  required="true" /> -->
+ 
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
+    output="screen"  args="--namespace=/bot 1y_position_controller 2y_position_controller 3y_position_controller
+    4y_position_controller 5x_position_controller 6x_position_controller 7x_position_controller 8x_position_controller joint_state_controller"/>
 
   <!-- node for twist commands from keyboard, runs in the same terminal -->
   <!--node name="teleop" pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py"/-->
