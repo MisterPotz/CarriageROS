@@ -8,32 +8,32 @@ bot:
   1y_position_controller:
     type: velocity_controllers/JointPositionController
     joint: 1y_base_joint
-    pid: {p: 50, i: 0.01, d: 10.0}
+    pid: {p: 100, i: 0.01, d: 10.0}
   2y_position_controller:
     type: velocity_controllers/JointPositionController
     joint: 2y_base_joint
-    pid: {p: 50, i: 0.01, d: 10.0}
+    pid: {p: 100, i: 0.01, d: 10.0}
   3y_position_controller:
     type: velocity_controllers/JointPositionController
     joint: 3y_base_joint
-    pid: {p: 50, i: 0.01, d: 10.0}
+    pid: {p: 100, i: 0.01, d: 10.0}
   4y_position_controller:
     type: velocity_controllers/JointPositionController
     joint: 4y_base_joint
-    pid: {p: 50, i: 0.01, d: 10.0}
+    pid: {p: 100, i: 0.01, d: 10.0}
   5x_position_controller:
     type: velocity_controllers/JointPositionController
     joint: 5x_base_joint
-    pid: {p: 50, i: 0.01, d: 10.0}
+    pid: {p: 100, i: 0.01, d: 10.0}
   6x_position_controller:
     type: velocity_controllers/JointPositionController
     joint: 6x_base_joint
-    pid: {p: 50, i: 0.01, d: 10.0}
+    pid: {p: 100, i: 0.01, d: 10.0}
   7x_position_controller:
     type: velocity_controllers/JointPositionController
     joint: 7x_base_joint
-    pid: {p: 50, i: 0.01, d: 10.0}
+    pid: {p: 100, i: 0.01, d: 10.0}
   8x_position_controller:
     type: velocity_controllers/JointPositionController
     joint: 8x_base_joint
-    pid: {p: 50, i: 0.01, d: 10.0}
+    pid: {p: 100, i: 0.01, d: 10.0}

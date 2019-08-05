@@ -56,14 +56,44 @@
   <xacro:macro name="joint_axis_y">
     <axis xyz="1 0 0" rpy="0 0 0" />
   </xacro:macro>
+  <!-- friction is high so these wheels are drivers -->
+  <xacro:macro name="primary_wheel_physical_params" params="wheel_name">
+    <gazebo reference="${wheel_name}_wheel">
+        <mu1>10000.0</mu1>
+        <mu2>10000.0</mu2>
+        <minDepth>0.0001 </minDepth>
+        <fdir1 value = "0 0 0"/>
+        <kp>2147483647.0</kp>
+        <kd>1.0 </kd>
+        <material>Gazebo/Black</material>
+        <selfCollide>0</selfCollide>
+        <gravity>1</gravity>
+        <max_vel>0.0001</max_vel>
+      </gazebo>
+  </xacro:macro>
+  <!-- friction is low so these wheels are casters -->
+  <xacro:macro name="secondary_wheel_physical_params" params="wheel_name">
+    <gazebo reference="${wheel_name}_wheel">
+        <material>Gazebo/Black</material>
+        <kp>2147483647.0</kp>
+        <kd>1.0</kd>
+        <dampingFactor>0.0</dampingFactor>
+        <mu1>0.00</mu1>
+        <mu2>0.00</mu2>
+        <fdir1 value = "0 0 0"/>
+        <maxVel>15.0</maxVel>
+      </gazebo>
+  </xacro:macro>
+
   <!-- origin_wheel - location of where the wheel is attached
         wheel_orientation - the direction (axis) of where the wheel is turned straight to
         joint_orientation - the axis in which direction the joint rotates the wheel straight to
         e.g. - wheel's axis is y - so it rotates in the way so robot goes straight in x axis.
         so wheel_orientation is x, joint_orientation is x 
         joint_origin - the location of where the slider joint is attached (should be at the very edge of the bottom
-        of the base_link-->
-  <xacro:macro name="wheel" params="name *wheel_orientation *joint_orientation *joint_origin">
+        of the base_link
+      -->
+  <xacro:macro name="wheel" params="name *wheel_orientation *joint_orientation *joint_origin *wheel_physical_params"> 
     <link name="btwn_base_and_${name}wheel">
       <inertial>
         <mass value="${wheel_mass/10}" />
@@ -87,12 +117,16 @@
         <parent link="base_link"/>
         <child link="btwn_base_and_${name}wheel"/>
         <!-- <child link="${name}_wheel"/> -->
-        <limit effort="60.0" lower="${-below_offset_btwn_base_wheel-wheel_diameter}" upper="0.01" velocity="0.5"/>
+        <limit effort="200.0" lower="${-below_offset_btwn_base_wheel-wheel_diameter}" upper="0.01" velocity="0.5"/>
         <xacro:insert_block name="joint_origin"/>
         <axis xyz="0 0 1" rpy="0 0 0" />
-        <dynamics damping="0.3"/>
+        <!-- little damping reduces some oscillations a bit -->
+        <dynamics damping="0.05"/> 
+        <!-- lower and upper limits should be slightly less than those mentioned in <joint> tag
+            k_velocity should be small - less oscillations, k_position can be a bit higher but it influences
+            more on speed of joint moving than on oscillations -->
         <safety_controller soft_lower_limit="-0.8" soft_upper_limit="0.1"  k_velocity="0.001" k_position="0.2"/>
-    </joint>
+      </joint>
     <link name="${name}_wheel">
         <visual>
           <material name="black">
@@ -118,21 +152,12 @@
         <parent link="btwn_base_and_${name}wheel"/>
         <child link="${name}_wheel"/>
         <origin xyz="0 0 0" rpy="0 0 0"/>
+  
     </joint>
     
-    
       <!-- GAZEBO settings for wheels -->
-    <gazebo reference="${name}_wheel">
-      <mu1>10000000.0</mu1>
-      <mu2>10000000.0</mu2>
-      <minDepth>0.000001 </minDepth>
-      <fdir1 value = "1 0 0"/>
-      <kp>10000000.0</kp>
-      <kd>100000 </kd>
-      <material>Gazebo/Black</material>
-      <selfCollide>0</selfCollide>
-      <gravity>1</gravity>
-    </gazebo>
+      <!-- on each side of the robot should be 2 driver wheels and 2 non-driver caster wheels so they don't conflict -->
+    <xacro:insert_block name="wheel_physical_params"/>
 
     <gazebo reference="btwn_base_and_${name}wheel">
         <mu1>1000000.0</mu1>
@@ -184,51 +209,55 @@
   </link>
 
   <!-- WHEELS -->
-  
+
    <xacro:wheel name="1y">
     <xacro:wheel_orientation_y/>
     <xacro:joint_axis_y/>
     <origin xyz="${bot_width/2} ${-distance_between_wheels/2} ${-bot_height/2+wheel_diameter/3*2}" rpy="0 0 0"/>
+    <xacro:primary_wheel_physical_params wheel_name="1y"/>
   </xacro:wheel>
-
   <xacro:wheel name="2y">
-      <xacro:wheel_orientation_y/>
-      <xacro:joint_axis_y/>
+    <xacro:wheel_orientation_y/>
+    <xacro:joint_axis_y/>
     <origin xyz="${bot_width/2} ${distance_between_wheels/2} ${-bot_height/2+wheel_diameter/3*2}" rpy="0 0 0"/>
+    <xacro:secondary_wheel_physical_params wheel_name="2y"/>
   </xacro:wheel>
   <xacro:wheel name="3y">
-      <xacro:wheel_orientation_y/>
-      <xacro:joint_axis_y/>
+    <xacro:wheel_orientation_y/>
+    <xacro:joint_axis_y/>
     <origin xyz="${-bot_width/2} ${-distance_between_wheels/2} ${-bot_height/2+wheel_diameter/3*2}" rpy="0 0 0"/>
+    <xacro:primary_wheel_physical_params wheel_name="3y"/>
   </xacro:wheel>
   <xacro:wheel name="4y">
-      <xacro:wheel_orientation_y/>
-      <xacro:joint_axis_y/>
-    <origin xyz="${-bot_width/2} ${distance_between_wheels/2} ${-bot_height/2+wheel_diameter/3*2}" rpy="0 0 0"/>
+    <xacro:wheel_orientation_y/>
+    <xacro:joint_axis_y/>
+    <origin xyz="${-bot_width/2} ${distance_between_wheels/2} ${-bot_height/2+wheel_diameter/3*2}" rpy="0 0 0"/>  
+    <xacro:secondary_wheel_physical_params wheel_name="4y"/>
   </xacro:wheel>
   <xacro:wheel name="5x">
     <xacro:wheel_orientation_x/>
     <xacro:joint_axis_x/>
     <origin xyz="${distance_between_wheels/2} ${bot_width/2 } ${-bot_height/2+wheel_diameter/3*2}" rpy="0 0 0"/>
+    <xacro:primary_wheel_physical_params wheel_name="5x"/>
   </xacro:wheel>
   <xacro:wheel name="6x">
-      <xacro:wheel_orientation_x/>
-      <xacro:joint_axis_x/>
+    <xacro:wheel_orientation_x/>
+    <xacro:joint_axis_x/>
     <origin xyz="${-distance_between_wheels/2} ${bot_width/2 } ${-bot_height/2+wheel_diameter/3*2}" rpy="0 0 0"/>
+    <xacro:secondary_wheel_physical_params wheel_name="6x"/>
   </xacro:wheel>
   <xacro:wheel name="7x">
-      <xacro:wheel_orientation_x/>
-      <xacro:joint_axis_x/>
+    <xacro:wheel_orientation_x/>
+    <xacro:joint_axis_x/>
     <origin xyz="${distance_between_wheels/2} ${-bot_width/2 } ${-bot_height/2+wheel_diameter/3*2}" rpy="0 0 0"/>
+    <xacro:primary_wheel_physical_params wheel_name="7x"/>
   </xacro:wheel>
   <xacro:wheel name="8x">
-      <xacro:wheel_orientation_x/>
-      <xacro:joint_axis_x/>
+    <xacro:wheel_orientation_x/>
+    <xacro:joint_axis_x/>
     <origin xyz="${-distance_between_wheels/2} ${-bot_width/2 } ${-bot_height/2+wheel_diameter/3*2}" rpy="0 0 0"/>
+    <xacro:secondary_wheel_physical_params wheel_name="8x"/>
   </xacro:wheel>
-
-
-
 
   <gazebo reference="base_link">
       <mu1>1000000.0</mu1>
@@ -242,38 +271,7 @@
       <gravity>true</gravity>
   </gazebo>
 
-
-  <!-- LIDAR -->
-
-  <!-- <joint name="lidar_joint" type="fixed">
-    <axis xyz="0 0 0" />
-    <origin xyz="${bot_length*6/7} 0 ${bot_height}" rpy="0 0 0"/>
-    <parent link="base_link"/>
-    <child link="lidar"/>
-  </joint>
-
-  <link name="lidar">
-    <collision>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry>
-        <box size="0.03 0.03 0.03"/>
-      </geometry>
-    </collision>
-
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry>
-        <box size="0.03 0.03 0.03"/>      
-      </geometry>
-    </visual>
-    <inertial>
-      <mass value="1e-5" />
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6" />
-    </inertial>
-  </link>  -->
-  
-  
+  <!-- should be turned on because we are using some interfaces to control joints -->
   <gazebo>
     <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
       <robotNamespace>/bot</robotNamespace>
@@ -283,6 +281,7 @@
   
   
   <!-- GAZEBO PLUGINS -->
+  <!-- setup of 4 driver primary wheels -->
   <gazebo>
     <plugin name="differential_drive_controller" filename="libgazebo_ros_diff_drive.so">
       <alwaysOn>true</alwaysOn>
@@ -290,6 +289,36 @@
       <updateRate>50</updateRate>
       <leftJoint>1y_wheel_joint</leftJoint>
       <rightJoint>3y_wheel_joint</rightJoint>
+      <wheelSeparation>0.75</wheelSeparation>
+      <angular>
+        <z>
+          <has_velocity_limits>true</has_velocity_limits>
+          <max_velocity>0</max_velocity>
+          <has_acceleration_limits>true</has_acceleration_limits>
+          <max_acceleration>0</max_acceleration>
+          <has_jerk_limits>true</has_jerk_limits>
+          <max_jerk>0</max_jerk>
+        </z>
+      </angular>
+      <wheelDiameter>0.12</wheelDiameter>
+      <torque>120</torque>
+      <commandTopic>cmd_vel_y</commandTopic>
+      <odometryTopic>odom</odometryTopic>
+      <odometryFrame>odom</odometryFrame>
+      <robotBaseFrame>base_link</robotBaseFrame>
+      <odometrySource>world</odometrySource>
+      <publishWheelTF>true</publishWheelTF>
+      <publishWheelJointState>true</publishWheelJointState>
+    </plugin>
+  </gazebo>
+
+  <gazebo>
+    <plugin name="differential_drive_controller_2" filename="libgazebo_ros_diff_drive.so">
+      <alwaysOn>true</alwaysOn>
+      <publishTf>1</publishTf>
+      <updateRate>50</updateRate>
+      <leftJoint>5x_wheel_joint</leftJoint>
+      <rightJoint>7x_wheel_joint</rightJoint>
       <wheelSeparation>0.75</wheelSeparation>
       <angular>
         <z>
@@ -313,35 +342,4 @@
     </plugin>
   </gazebo>
 
-  <!-- <gazebo reference="lidar">
-    <sensor type="ray" name="head_hokuyo_sensor_front">
-      <pose>0 0 0 0 0 0</pose>
-      <visualize>true</visualize>
-      <update_rate>40</update_rate>
-      <ray>
-        <scan>
-          <horizontal>
-            <samples>720</samples>
-            <resolution>1</resolution>
-            <min_angle>-1.3</min_angle>
-            <max_angle>1.3</max_angle>
-          </horizontal>
-        </scan>
-        <range>
-          <min>0.1</min>
-          <max>30.0</max>
-          <resolution>0.01</resolution>
-        </range>
-        <noise>
-          <type>gaussian</type>
-          <mean>0.0</mean>
-          <stddev>0.01</stddev>
-        </noise>
-      </ray>
-      <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_laser.so">
-        <topicName>scan</topicName>
-        <frameName>lidar</frameName>
-      </plugin>
-    </sensor>
-  </gazebo> -->
 </robot>
