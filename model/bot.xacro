@@ -59,16 +59,13 @@
   <!-- friction is high so these wheels are drivers -->
   <xacro:macro name="primary_wheel_physical_params" params="wheel_name">
     <gazebo reference="${wheel_name}_wheel">
-        <mu1>10000.0</mu1>
-        <mu2>10000.0</mu2>
-        <minDepth>0.0001 </minDepth>
-        <fdir1 value = "0 0 0"/>
+        <mu1>1000000.0</mu1>
+        <mu2>1000000.0</mu2>
+        <fdir1 value = "1 1 0"/>
         <kp>2147483647.0</kp>
         <kd>1.0 </kd>
         <material>Gazebo/Black</material>
-        <selfCollide>0</selfCollide>
-        <gravity>1</gravity>
-        <max_vel>0.0001</max_vel>
+        <minDepth>0.01 </minDepth>
       </gazebo>
   </xacro:macro>
   <!-- friction is low so these wheels are casters -->
@@ -77,11 +74,10 @@
         <material>Gazebo/Black</material>
         <kp>2147483647.0</kp>
         <kd>1.0</kd>
-        <dampingFactor>0.0</dampingFactor>
-        <mu1>0.00</mu1>
-        <mu2>0.00</mu2>
-        <fdir1 value = "0 0 0"/>
-        <maxVel>15.0</maxVel>
+        <mu1>100.00</mu1>
+        <mu2>100.00</mu2>
+        <fdir1 value = "1 1 0"/>
+        <minDepth>0.01 </minDepth>
       </gazebo>
   </xacro:macro>
 

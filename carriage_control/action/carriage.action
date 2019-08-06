@@ -1,0 +1,17 @@
+#goal definition
+int32 x_cell
+int32 y_cell
+#if true, dropdown wheels. the goal will be ignored then
+bool demo_dropdown_wheels
+#if true, the goal is ignored and robot drives a little circle
+#of cells to show the possibilities of the package
+bool demo_ride_circle
+
+---
+#result definition
+int32 used_time #the time in seconds, that took robot to complete the goal
+
+bool success
+---
+#feedback
+int32 complete #percentage of completing task
