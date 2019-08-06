@@ -3,6 +3,12 @@
 # Some Info
 This is a set of packages that provides a model of a robot that is used in carrying various things in specialized warehouses. 
 Each side of this robot is equipped with wheels. Robot can travel in 2-dimensional space - along x-axis or along y-axis at one time. When it is switched between axises, some wheels go down and others go up.
+## Packages to be installed
+You should install the following packages:
+```
+ros-melodic-ros-control
+ros-melodic-ros-controllers
+```
 
 ## Launch
 To launch this model in Gazebo, simply type
