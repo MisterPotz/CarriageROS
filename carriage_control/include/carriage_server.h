@@ -13,6 +13,12 @@
 #include <std_msgs/Bool.h>
 #include <std_msgs/Int32.h>
 #include <math.h>
+namespace carriage_control{
+
+struct WheelSet{
+    std::string cmd_vel;
+    std::string drive_joint_command[4];
+};
 
 class Carriage_Server{
     private:
@@ -24,7 +30,10 @@ class Carriage_Server{
             double x;
             double y;
         } position;
-        
+        struct WheelSets{
+            WheelSet along_y;
+            WheelSet along_x;
+        } wheel_sets;
         ros::NodeHandle nh;
         actionlib::SimpleActionServer<carriage_control::carriageAction> ac;
         const std::string action_name;
@@ -38,9 +47,21 @@ class Carriage_Server{
         void getModelPosition();
         void getCell();
         void initializeVars();
+        void registerCallbacks();
+        void goalCB(const carriage_control::carriageGoalConstPtr &goal);
+        const Cell buildTrajectoryToGoal(const Cell& goal);
+        void applyTrajectory(const Cell trajectory);
+        void setWheelsUp(WheelSet& wheel_set);
+        void setWheelsDown(WheelSet& wheel_set);
+        //function that performs delivery of robot to the next edge cell
+        void spinWheels(const WheelSet& wheel_set, int cells);
+
     public:
-        Carriage_Server(std::string name, std::string robot_name);
+        Carriage_Server(const std::string name, const std::string robot_name);
         ~Carriage_Server();
         void showCell();
+        void registerWheelSets(const WheelSet& x, const WheelSet& y);
 };
+};
+
 #endif
