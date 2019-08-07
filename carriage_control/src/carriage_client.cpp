@@ -9,7 +9,7 @@ void spinThread()
   ros::spin();
 }
 
-int menu();
+void menu();
 void steering_mode();
 void up_and_down_mode();
 void maneuvre_mode();
@@ -35,10 +35,13 @@ int main(int argc, char **argv)
     bool exit = false;
     for(;;)
     {
-      int choise = menu();
+      char choise;
+      menu();
+      std::cin >> choise;
+      
       switch(choise)
       {
-        case (1):{
+        case '1':{
           
           bool exit_1 = false;
           
@@ -115,7 +118,7 @@ int main(int argc, char **argv)
           }
                   
           break;}
-        case (2):{
+        case '2':{
           bool exit_2 = false;
           
           for(;;)
@@ -176,7 +179,7 @@ int main(int argc, char **argv)
               break;
           }
           break;}
-        case (3):{
+        case '3':{
           
           bool exit_3 = false;
           for(;;)
@@ -222,7 +225,7 @@ int main(int argc, char **argv)
 
           }
           break;}
-        case (4):{
+        case '4':{
           exit = true;
           break;}
         default:{
@@ -246,18 +249,14 @@ int main(int argc, char **argv)
 }
 
 // making main menu
-int menu()
+void menu()
 {
-  int choise;
-
   std::cout << " **** Menu ****\n\n";
   std::cout << " (1) Steering mode \n";
   std::cout << " (2) Up & Down mode \n";
   std::cout << " (3) Maneuvre mode \n";
   std::cout << " (4) Quit \n\n";
   std::cout << ": ";
-  std::cin >> choise;
-  return choise;
 }
 
 void steering_mode()
