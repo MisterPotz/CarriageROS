@@ -1,10 +1,11 @@
 #include <carriage_server.h>
 
-carriage_control::Carriage_Server::Carriage_Server(std::string name, std::string _robot_name) :
+carriage_control::Carriage_Server::Carriage_Server(std::string name, std::string _robot_name, float _cell_size) :
     ac(nh, name, false),
-    action_name(name), robot_name(_robot_name)
+    action_name(name), robot_name(_robot_name), cell_size(_cell_size)
   {
     initializeVars();
+    registerCallbacks();
     ac.start();
   }
 void carriage_control::Carriage_Server::initializeVars(){
@@ -17,8 +18,10 @@ void carriage_control::Carriage_Server::registerCallbacks(){
   ac.registerGoalCallback(boost::bind(&carriage_control::Carriage_Server::goalCB, this));
 }
 void carriage_control::Carriage_Server::getCell(){
-    cell.x = (position.x > 0) ?  trunc(position.x)+1 : trunc(position.x)-1;
-    cell.y = (position.y > 0) ?  trunc(position.y)+1 : trunc(position.y)-1;
+    double temp_x = position.x / cell_size;
+    double temp_y = position.y / cell_size;
+    cell.x = (temp_x > 0) ?  trunc(temp_x)+1 : trunc(temp_x)-1;
+    cell.y = (temp_y > 0) ?  trunc(temp_y)+1 : trunc(temp_y)-1;
 }
 
 carriage_control::Carriage_Server::~Carriage_Server(){}
@@ -40,7 +43,7 @@ void carriage_control::Carriage_Server::showCell(){
     }
     ROS_INFO("Current cell:\nx:%d, y:%d", cell.x, cell.y);
 }
-const carriage_control::Carriage_Server::Cell carriage_control::Carriage_Server::buildTrajectoryToGoal( Cell& goal){
+const carriage_control::Carriage_Server::Cell carriage_control::Carriage_Server::orderCells( carriage_control::Carriage_Server::Cell& goal){
   Cell trajectory;
   //update current position
   carriage_control::Carriage_Server::getCell();
@@ -52,7 +55,7 @@ void carriage_control::Carriage_Server::registerWheelSets(const WheelSet& x,cons
   wheel_sets.along_x = x;
   wheel_sets.along_y = y;
 }
-bool carriage_control::Carriage_Server::applyTrajectory(const carriage_control::Carriage_Server::Cell trajectory){
+bool carriage_control::Carriage_Server::moveRobot(const carriage_control::Carriage_Server::Cell trajectory){
   //first, we go along x
   try{
     if (trajectory.x > 0){
@@ -81,7 +84,7 @@ void carriage_control::Carriage_Server::goalCB(){
   }
   carriage_control::carriageGoalConstPtr goal =  ac.acceptNewGoal();
   Cell goal_c; goal_c.x = goal->x_cell; goal_c.y = goal->y_cell;
-  if(applyTrajectory(buildTrajectoryToGoal(goal_c))){
+  if(moveRobot(orderCells(goal_c))){
     result_.success = true;
     result_.used_time = seconds;
     ac.setSucceeded(result_, "Robot successfully arrived");
@@ -91,9 +94,18 @@ void carriage_control::Carriage_Server::goalCB(){
     result_.used_time = seconds;
     ac.setAborted(result_, "Some error occurred");
   }
-  
+ 
 }
+//this is high-level function to build trajectory
+void carriage_control::Carriage_Server::spinWheels(const WheelSet& wheel_set, int cells){
+  //set paths (start - current pos, end - the middle of the next cell)
+  //give paths to path-filter function to build comprehensible states of robot, also we give a reference to vector of Odometry msgs
+  //publish received states to cmd_vel
+}
+//this function centralizes robot directly into middle of cell, returnes status of completion
+bool carriage_control::Carriage_Server::centralize(){
 
+}
 void carriage_control::Carriage_Server::setWheelsUp(WheelSet& wheel_set){
   std_msgs::Float64 msg;
   msg.data = upper_position;
@@ -108,12 +120,15 @@ void carriage_control::Carriage_Server::setWheelsDown(WheelSet& wheel_set){
     wheel_set.drive_joint_command_pub[i].publish(msg);
   }
 }
+double carriage_control::Carriage_Server::getCellCize(){
+  return cell_size;
+}
 ros::NodeHandle& carriage_control::Carriage_Server::getNodeHandle(){
   return nh;
 }
 int main(int argc, char** argv){
   ros::init(argc, argv, "carriage_server");
-  carriage_control::Carriage_Server crrg_srvr(ros::this_node::getName(), "bot");
+  carriage_control::Carriage_Server crrg_srvr(ros::this_node::getName(), "bot", 0.78);
   ros::NodeHandle& nh =  crrg_srvr.getNodeHandle();
   carriage_control::WheelSet along_y;
   along_y.cmd_vel="/cmd_vel_y";

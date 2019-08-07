@@ -6,6 +6,7 @@
 //Custom predefined action messages
 #include <carriage_control/carriageAction.h>
 
+//builder end executioner of straight-line trajectories
 //включаем ROS
 #include <ros/ros.h>
 #include <actionlib/server/simple_action_server.h>
@@ -14,6 +15,8 @@
 #include <std_msgs/Int32.h>
 #include <std_msgs/Float64.h>
 #include <math.h>
+#include <StraightNavigator.h>
+
 namespace carriage_control{
 
 struct WheelSet{
@@ -26,6 +29,7 @@ class Carriage_Server{
         //wheel_parameters
         const float upper_position = 0.0f;
         const float lower_position = -0.4f;
+        const float cell_size;
         struct Cell{
             int32_t x;
             int32_t y;
@@ -56,21 +60,22 @@ class Carriage_Server{
         void initializeVars();
         void registerCallbacks();
         void goalCB();
-        const Cell buildTrajectoryToGoal( Cell& goal);
-        bool applyTrajectory(const Cell trajectory);
+        const Cell orderCells( Cell& goal);
+        bool moveRobot(const Cell trajectory);
         void setWheelsUp(WheelSet& wheel_set);
         void setWheelsDown(WheelSet& wheel_set);
         //function that performs delivery of robot to the next edge cell
         void spinWheels(const WheelSet& wheel_set, int cells);
         //centralizes robot so it fits perfectly into the cell
-        void centralize();
+        bool centralize();
 
     public:
-        Carriage_Server(const std::string name, const std::string robot_name);
+        Carriage_Server(const std::string name, const std::string robot_name, float _cell_size);
         ~Carriage_Server();
         void showCell();
         void registerWheelSets(const WheelSet& x, const WheelSet& y);
         ros::NodeHandle& getNodeHandle();
+        double getCellCize();
 };
 };
 
