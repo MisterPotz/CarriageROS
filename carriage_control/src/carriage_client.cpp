@@ -49,6 +49,35 @@ int main(int argc, char **argv)
             std::cin >> var1;
             switch (var1)
             {
+            case 'e':{
+              int Xcell, Ycell;
+              std::cin >> Xcell; std::cout <<"\n"; std::cin >> Ycell; std::cout <<"\n";
+                    // checking user's foolish joke
+                    if((Xcell > 200) || (Ycell > 200) || (Xcell <0 ) || (Ycell < 0))
+                    {
+                      std::cout << "Please, enter correct coordinates! \n";
+                    }
+                    else
+                    {
+                      goal.x_cell = Xcell;
+                      goal.y_cell = Ycell;
+                      ac.sendGoal(goal);
+
+                      //wait for the action to return
+                      bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
+
+                      if (finished_before_timeout)
+                      {
+                        actionlib::SimpleClientGoalState state = ac.getState();
+                        ROS_INFO("Action finished: %s",state.toString().c_str());
+                      }
+                      else
+                        ROS_INFO("Action did not finish before the time out.");
+                      //wait for the action to return
+                    } 
+              std::cout << "\n\n ";
+              break;
+            }
             case 's':{
               goal.x_cell = 0;
               goal.y_cell = 0;
@@ -76,32 +105,8 @@ int main(int argc, char **argv)
               std::cout << "\n\n ";
               break;}
             default:{
-              int Xcell, Ycell;
-              std::cin >> Xcell; std::cout <<"\t"; std::cin >> Ycell; std::cout <<"\n";
-                    // checking user's foolish joke
-                    if((Xcell > 200) || (Ycell > 200) || (Xcell <0 ) || (Ycell < 0))
-                    {
-                      std::cout << "Please, enter correct coordinates! \n";
-                    }
-                    else
-                    {
-                      goal.x_cell = Xcell;
-                      goal.y_cell = Ycell;
-                      ac.sendGoal(goal);
-
-                      //wait for the action to return
-                      bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
-
-                      if (finished_before_timeout)
-                      {
-                        actionlib::SimpleClientGoalState state = ac.getState();
-                        ROS_INFO("Action finished: %s",state.toString().c_str());
-                      }
-                      else
-                        ROS_INFO("Action did not finish before the time out.");
-                      //wait for the action to return
-                    } 
-              std::cout << "\n\n ";
+                std::cout << "Please, select again!\n";
+                std::cout << "\n\n ";
                 break;}
               } // end of switch_1 block
             
@@ -258,7 +263,7 @@ int menu()
 void steering_mode()
 {
   std::cout << "**** Steering mode ****\n\n";
-  std::cout << "Please, enter cell's coordinate \n";
+  std::cout << "Please, enter cell's coordinate, press 'e' \n";
   std::cout << "If you want to go to the start of the field, press 's' \n";
   std::cout << "If you want to cancel operation, press 'c' \n";
   std::cout << "To main menu, press 'q' \n";
