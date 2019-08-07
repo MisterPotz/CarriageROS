@@ -75,8 +75,7 @@ int main(int argc, char **argv)
             default:{
               int Xcell, Ycell;
               std::cin >> Xcell; std::cout <<"\t"; std::cin >> Ycell; std::cout <<"\n";
-                    // checking user's foolish jokes
-                    if(Xcell, Ycell )
+                    // checking user's foolish joke
                     if((Xcell > 200) || (Ycell > 200) || (Xcell <0 ) || (Ycell < 0))
                     {
                       std::cout << "Please, enter correct coordinates! \n";
