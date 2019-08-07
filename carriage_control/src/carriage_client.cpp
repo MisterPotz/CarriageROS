@@ -236,36 +236,36 @@ int menu()
   std::cout << " (2) Up & Down mode \n";
   std::cout << " (3) Maneuvre mode \n";
   std::cout << " (4) Quit \n\n";
-  std::cout << ": ";
+  std::cout << ": \n\n";
   std::cin >> choise;
   return choise;
 }
 
 void steering_mode()
 {
-  std::cout << "**** Steering mode ****";
+  std::cout << "**** Steering mode ****\n\n";
   std::cout << "Please, enter cell's coordinate \n";
   std::cout << "If you want to go to the start of the field, press 's' \n";
   std::cout << "If you want to cancel operation, press 'c' \n";
   std::cout << "To main menu, press 'q' \n";
-  std::cout << ": ";
+  std::cout << ": \n\n";
 }
 
 void up_and_down_mode()
 {
-  std::cout << "**** Up&Down mode ****";
+  std::cout << "**** Up&Down mode ****\n\n";
   std::cout << "If you want to lift the wheels, press 'u' \n";
   std::cout << "If you want to lower the wheels, press 'l' \n";
   std::cout << "If you want to cancel operation, press 'c' \n";
   std::cout << "To main menu, press 'q' \n";
-  std::cout << ": ";
+  std::cout << ": \n\n";
 }
 
 void maneuvre_mode()
 {
-  std::cout << "**** Maneuvre mode ****";
+  std::cout << "**** Maneuvre mode ****\n\n";
   std::cout << "If you want to do a lap around the field, press 'l' \n";
   std::cout << "If you want to cancel operation, press 'c' \n";
   std::cout << "To main menu, press 'q' \n";
-  std::cout << ": ";
+  std::cout << ": \n\n";
 }
