@@ -65,12 +65,15 @@ int main(int argc, char **argv)
                 else
                   ROS_INFO("Action did not finish before the time out.");
                 //wait for the action to return
-
+  
+              std::cout << "\n\n ";
               break;}
             case 'c':{
+              std::cout << "\n\n ";
               break;}
             case 'q':{
               exit_1 = true;
+              std::cout << "\n\n ";
               break;}
             default:{
               int Xcell, Ycell;
@@ -97,7 +100,8 @@ int main(int argc, char **argv)
                       else
                         ROS_INFO("Action did not finish before the time out.");
                       //wait for the action to return
-                    }  
+                    } 
+              std::cout << "\n\n ";
                 break;}
               } // end of switch_1 block
             
@@ -131,6 +135,7 @@ int main(int argc, char **argv)
                 else
                   ROS_INFO("Action did not finish before the time out.");
                 //wait for the action to return
+                std::cout << "\n\n ";
                 break;}
               case 'l':{
                 goal.demo_dropdown_wheels = false;
@@ -147,14 +152,18 @@ int main(int argc, char **argv)
                 else
                   ROS_INFO("Action did not finish before the time out.");
                 //wait for the action to return
+                std::cout << "\n\n ";
                 break;}
               case 'c':{
+                std::cout << "\n\n ";
                 break;}
               case 'q':{
                 exit_2 = true;
+                std::cout << "\n\n ";
                 break;}
               default:{
                 std::cout << "Please, select again!\n";
+                std::cout << "\n\n ";
                 break;}
             } // end of switch_2 block
 
@@ -187,14 +196,18 @@ int main(int argc, char **argv)
                 else
                   ROS_INFO("Action did not finish before the time out.");
                 //wait for the action to return
+                std::cout << "\n\n ";
                 break;}
               case 'c':{
+                std::cout << "\n\n ";
                 break;}
               case 'q':{
                 exit_3 = true;
+                std::cout << "\n\n ";
                 break;}
                 default:{
                    std::cout << "Please, select again!\n";
+                  std::cout << "\n\n ";
                 break;
                 }
             } // end of switch_3 block
@@ -209,6 +222,7 @@ int main(int argc, char **argv)
           break;}
         default:{
           std::cout << "Please, select again!\n";
+          std::cout << "\n\n ";
           break;}
       } // end of switch block
       
@@ -236,7 +250,7 @@ int menu()
   std::cout << " (2) Up & Down mode \n";
   std::cout << " (3) Maneuvre mode \n";
   std::cout << " (4) Quit \n\n";
-  std::cout << ": \n\n";
+  std::cout << ": ";
   std::cin >> choise;
   return choise;
 }
@@ -248,7 +262,7 @@ void steering_mode()
   std::cout << "If you want to go to the start of the field, press 's' \n";
   std::cout << "If you want to cancel operation, press 'c' \n";
   std::cout << "To main menu, press 'q' \n";
-  std::cout << ": \n\n";
+  std::cout << ": ";
 }
 
 void up_and_down_mode()
@@ -258,7 +272,7 @@ void up_and_down_mode()
   std::cout << "If you want to lower the wheels, press 'l' \n";
   std::cout << "If you want to cancel operation, press 'c' \n";
   std::cout << "To main menu, press 'q' \n";
-  std::cout << ": \n\n";
+  std::cout << ": ";
 }
 
 void maneuvre_mode()
@@ -267,5 +281,5 @@ void maneuvre_mode()
   std::cout << "If you want to do a lap around the field, press 'l' \n";
   std::cout << "If you want to cancel operation, press 'c' \n";
   std::cout << "To main menu, press 'q' \n";
-  std::cout << ": \n\n";
+  std::cout << ": ";
 }
