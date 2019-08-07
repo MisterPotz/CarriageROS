@@ -19,7 +19,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "client_node");
 
       // create the action client
-    actionlib::SimpleActionClient<carriage_control::carriageAction> ac("action_server"); 
+    actionlib::SimpleActionClient<carriage_control::carriageAction> ac("carriage_server"); 
 
       // Here the thread is created and the ros node is started spinning in the background. By using this method you can create multiple threads for your action client if needed.
     boost::thread spin_thread(&spinThread);
