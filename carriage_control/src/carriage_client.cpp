@@ -2,6 +2,8 @@
 #include <actionlib/client/terminal_state.h>
 #include <carriage_control/carriageAction.h>
 #include <boost/thread.hpp>
+#include <cctype>   // для функции isdigit
+#include <cstdlib>  // для функции atoi
 
 // Here is a simple function for spinning a thread that will be used later in the code. This thread will spin the ros node in the background.
 void spinThread()
@@ -13,6 +15,7 @@ void menu();
 void steering_mode();
 void up_and_down_mode();
 void maneuvre_mode();
+bool is_number(const std::string& s);
 
 int main(int argc, char **argv)
 {
@@ -54,14 +57,31 @@ int main(int argc, char **argv)
             {
             case 'e':{
               int Xcell, Ycell;
-              std::cin >> Xcell; std::cout <<"\n"; std::cin >> Ycell; std::cout <<"\n";
-                    // checking user's foolish joke
-                    if((Xcell > 200) || (Ycell > 200) || (Xcell <0 ) || (Ycell < 0))
+              bool ok_1 = true;
+              bool ok_2 = true;
+              char str_1[5], str_2[5];
+              std::cout <<"Please, enter x_cell \n";
+              std::cin >> str_1;
+              std::cout <<"Please, enter y_cell \n";
+              std::cin >> str_2;
+              
+              // checking foolish users data
+              ok_1 = is_number(str_1);
+              ok_2 = is_number(str_2);
+
+              if ((ok_1) && (ok_2))
+              {
+                // string to int
+                Xcell = atoi(str_1);
+                Ycell = atoi(str_2);
+                // another check for foolish users data
+                if((Xcell > 200) || (Ycell > 200) || (Xcell <0 ) || (Ycell < 0))
                     {
                       std::cout << "Please, enter correct coordinates! \n";
                     }
                     else
                     {
+                      std::cout << "Good user), i'll send your coordinates \n";
                       goal.x_cell = Xcell;
                       goal.y_cell = Ycell;
                       ac.sendGoal(goal);
@@ -78,10 +98,19 @@ int main(int argc, char **argv)
                         ROS_INFO("Action did not finish before the time out.");
                       //wait for the action to return
                     } 
+              }
+              else
+              {
+                std::cout << "Enter, chislo, zasranetz!";
+              }
+              
+                 
+                    
               std::cout << "\n\n ";
               break;
             }
             case 's':{
+              std::cout << "sending zero coordinates\n ";
               goal.x_cell = 0;
               goal.y_cell = 0;
               ac.sendGoal(goal);
@@ -101,6 +130,7 @@ int main(int argc, char **argv)
               std::cout << "\n\n ";
               break;}
             case 'c':{
+              std::cout << "Cancelling operation! \n";
               std::cout << "\n\n ";
               break;}
             case 'q':{
@@ -129,6 +159,7 @@ int main(int argc, char **argv)
             switch (var2)
             {
               case 'u':{
+                std::cout << "Dropping down your govnowheels \n";
                 goal.demo_dropdown_wheels = true;
                 ac.sendGoal(goal);
 
@@ -146,6 +177,7 @@ int main(int argc, char **argv)
                 std::cout << "\n\n ";
                 break;}
               case 'l':{
+                std::cout << "Lifting your govnowheels \n";
                 goal.demo_dropdown_wheels = false;
                 ac.sendGoal(goal);
 
@@ -163,6 +195,7 @@ int main(int argc, char **argv)
                 std::cout << "\n\n ";
                 break;}
               case 'c':{
+                std::cout << "Cancelling operation! \n";
                 std::cout << "\n\n ";
                 break;}
               case 'q':{
@@ -190,6 +223,7 @@ int main(int argc, char **argv)
             switch (var3)
             {
               case 'l':{
+                std::cout << "Riding around! \n";
                 goal.demo_ride_circle = true;
                 ac.sendGoal(goal);
 
@@ -207,6 +241,7 @@ int main(int argc, char **argv)
                 std::cout << "\n\n ";
                 break;}
               case 'c':{
+                std::cout << "Cancelling operation! \n";
                 std::cout << "\n\n ";
                 break;}
               case 'q':{
@@ -286,4 +321,12 @@ void maneuvre_mode()
   std::cout << "If you want to cancel operation, press 'c' \n";
   std::cout << "To main menu, press 'q' \n";
   std::cout << ": ";
+}
+
+// checking string for int (if letters, words, signed numbers - it will return false)
+bool is_number(const std::string& s)
+{
+    std::string::const_iterator it = s.begin();
+    while (it != s.end() && std::isdigit(*it)) ++it;
+    return !s.empty() && it == s.end();
 }
