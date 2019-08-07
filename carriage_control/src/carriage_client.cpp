@@ -158,7 +158,7 @@ int main(int argc, char **argv)
             std::cin >> var2;
             switch (var2)
             {
-              case 'u':{
+              case 'l':{
                 std::cout << "Dropping down your govnowheels \n";
                 goal.demo_dropdown_wheels = true;
                 ac.sendGoal(goal);
@@ -176,7 +176,7 @@ int main(int argc, char **argv)
                 //wait for the action to return
                 std::cout << "\n\n ";
                 break;}
-              case 'l':{
+              case 'u':{
                 std::cout << "Lifting your govnowheels \n";
                 goal.demo_dropdown_wheels = false;
                 ac.sendGoal(goal);
