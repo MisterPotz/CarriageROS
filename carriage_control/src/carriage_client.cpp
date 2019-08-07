@@ -38,17 +38,18 @@ int main(int argc, char **argv)
       int choise = menu();
       switch(choise)
       {
-        case (1):
+        case (1):{
           
           bool exit_1 = false;
-          char var1;
+          
           for(;;)
           {
+            char var1;
             steering_mode();
             std::cin >> var1;
             switch (var1)
             {
-            case 's':
+            case 's':{
               goal.x_cell = 0;
               goal.y_cell = 0;
               ac.sendGoal(goal);
@@ -65,13 +66,13 @@ int main(int argc, char **argv)
                   ROS_INFO("Action did not finish before the time out.");
                 //wait for the action to return
 
-              break;
-            case 'c':
-              break;
-            case 'q':
+              break;}
+            case 'c':{
+              break;}
+            case 'q':{
               exit_1 = true;
-              break;
-            default:
+              break;}
+            default:{
               int Xcell, Ycell;
               std::cin >> Xcell; std::cout <<"\t"; std::cin >> Ycell; std::cout <<"\n";
                     // checking user's foolish jokes
@@ -98,24 +99,25 @@ int main(int argc, char **argv)
                         ROS_INFO("Action did not finish before the time out.");
                       //wait for the action to return
                     }  
-                break;
+                break;}
               } // end of switch_1 block
             
             if(exit_1)
               break;
           }
                   
-          break;
-        case (2):
+          break;}
+        case (2):{
           bool exit_2 = false;
-          char var2;
+          
           for(;;)
           {
+            char var2;
             up_and_down_mode();
             std::cin >> var2;
             switch (var2)
             {
-              case 'u':
+              case 'u':{
                 goal.demo_dropdown_wheels = true;
                 ac.sendGoal(goal);
 
@@ -130,8 +132,8 @@ int main(int argc, char **argv)
                 else
                   ROS_INFO("Action did not finish before the time out.");
                 //wait for the action to return
-                break;
-              case 'l':
+                break;}
+              case 'l':{
                 goal.demo_dropdown_wheels = false;
                 ac.sendGoal(goal);
 
@@ -146,31 +148,32 @@ int main(int argc, char **argv)
                 else
                   ROS_INFO("Action did not finish before the time out.");
                 //wait for the action to return
-                break;
-              case 'c':
-                break;
-              case 'q':
+                break;}
+              case 'c':{
+                break;}
+              case 'q':{
                 exit_2 = true;
-                break;
-              default:
+                break;}
+              default:{
                 std::cout << "Please, select again!\n";
-                break;
+                break;}
             } // end of switch_2 block
 
             if(exit_2)
               break;
           }
-          break;
-        case (3):
-          char var3;
+          break;}
+        case (3):{
+          
           bool exit_3 = false;
           for(;;)
           {
+            char var3;
             maneuvre_mode();
             std::cin >> var3;
             switch (var3)
             {
-              case 'l':
+              case 'l':{
                 goal.demo_ride_circle = true;
                 ac.sendGoal(goal);
 
@@ -185,25 +188,29 @@ int main(int argc, char **argv)
                 else
                   ROS_INFO("Action did not finish before the time out.");
                 //wait for the action to return
-                break;
-              case 'c':
-                break;
-              case 'q':
+                break;}
+              case 'c':{
+                break;}
+              case 'q':{
                 exit_3 = true;
+                break;}
+                default:{
+                   std::cout << "Please, select again!\n";
                 break;
+                }
             } // end of switch_3 block
 
             if(exit_3)
             break;
 
           }
-          break;
-        case (4):
+          break;}
+        case (4):{
           exit = true;
-          break;
-        default:
+          break;}
+        default:{
           std::cout << "Please, select again!\n";
-          break;
+          break;}
       } // end of switch block
       
       if(exit)
