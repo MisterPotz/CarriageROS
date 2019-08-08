@@ -3,7 +3,7 @@
 
 int main(int argc, char** argv){
   ros::init(argc, argv, "carriage_server");
-  carriage_control::Carriage_Server crrg_srvr(ros::this_node::getName(), "bot","base_link", 0.78);
+  carriage_control::Carriage_Server crrg_srvr(ros::this_node::getName(), "bot","base_link", 0.75);
   ros::NodeHandle& nh =  crrg_srvr.getNodeHandle();
   carriage_control::WheelSet along_y;
   along_y.twist_command_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel_y", 6);
