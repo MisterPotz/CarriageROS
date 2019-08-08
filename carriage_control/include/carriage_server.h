@@ -16,11 +16,12 @@
 #include <std_msgs/Float64.h>
 #include <math.h>
 #include <StraightNavigator.h>
+#include <stack>
 
 namespace carriage_control{
 
 struct WheelSet{
-    std::string cmd_vel;
+    ros::Publisher twist_command_pub;
     ros::Publisher drive_joint_command_pub[4];
 };
 
@@ -29,11 +30,12 @@ class Carriage_Server{
         //wheel_parameters
         const float upper_position = 0.0f;
         const float lower_position = -0.4f;
-        const float cell_size;
+        const float cell_size; //total size of one cell
         struct Cell{
             int32_t x;
             int32_t y;
-        } cell;
+        } cell; //current cell
+        std::stack<Cell> cell_order_; //navigation order of cells to reach goal
         struct Position{
             double x;
             double y;
@@ -41,38 +43,43 @@ class Carriage_Server{
         struct WheelSets{
             WheelSet along_y;
             WheelSet along_x;
-        } wheel_sets;
+        } wheel_sets; //saves all the set of wheels
         ros::NodeHandle nh;
-        ros::Publisher slider_joint_pub;
         actionlib::SimpleActionServer<carriage_control::carriageAction> ac;
         const std::string action_name;
         const std::string robot_name;
-        // create messages that are used to published feedback/result
-        
+        const std::string base_name;
+        //navigation controller 
+        StraightNavigator *nav_manager_;
         carriage_control::carriageFeedback feedback_;
         carriage_control::carriageResult result_;
         long seconds; //amount of seconds that took robot to reach goal
         //client to obtain position of robot from gazebo topics
         ros::ServiceClient model_states_client;
+        //gazebo server used to get position of model
         gazebo_msgs::GetModelState gazebo_srv;
         void getModelPosition();
         void getCell();
         void initializeVars();
         void registerCallbacks();
         void goalCB();
-        const Cell orderCells( Cell& goal);
-        bool moveRobot(const Cell trajectory);
+        //fills cell_stack
+        void orderCells(Cell goal);
         void setWheelsUp(WheelSet& wheel_set);
         void setWheelsDown(WheelSet& wheel_set);
-        //function that performs delivery of robot to the next edge cell
-        void spinWheels(const WheelSet& wheel_set, int cells);
         //centralizes robot so it fits perfectly into the cell
         bool centralize();
+        //return false if current cell is the goal
+        bool checkOrder();
+        //prepares robot to move in the direction of wheel_set
+        void prepareRobot(WheelSet& wheel_set);
+        Position getCellCenter(Cell cell);
 
     public:
-        Carriage_Server(const std::string name, const std::string robot_name, float _cell_size);
+        Carriage_Server(const std::string name, const std::string robot_name, const std::string base_name, float _cell_size);
         ~Carriage_Server();
         void showCell();
+        bool moveRobot2Cell(Cell goal);
         void registerWheelSets(const WheelSet& x, const WheelSet& y);
         ros::NodeHandle& getNodeHandle();
         double getCellCize();

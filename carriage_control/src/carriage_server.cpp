@@ -1,9 +1,11 @@
 #include <carriage_server.h>
 
-carriage_control::Carriage_Server::Carriage_Server(std::string name, std::string _robot_name, float _cell_size) :
+carriage_control::Carriage_Server::Carriage_Server(std::string name, std::string _robot_name,
+    std::string _base_name, float _cell_size) :
     ac(nh, name, false),
-    action_name(name), robot_name(_robot_name), cell_size(_cell_size)
+    action_name(name), robot_name(_robot_name), base_name(_base_name), cell_size(_cell_size)
   {
+    nav_manager_ = new StraightNavigator(50, 1.0, 0.4);
     initializeVars();
     registerCallbacks();
     ac.start();
@@ -24,8 +26,19 @@ void carriage_control::Carriage_Server::getCell(){
     cell.y = (temp_y > 0) ?  trunc(temp_y)+1 : trunc(temp_y)-1;
 }
 
-carriage_control::Carriage_Server::~Carriage_Server(){}
-void carriage_control::Carriage_Server::getModelPosition() 
+carriage_control::Carriage_Server::Position carriage_control::Carriage_Server::getCellCenter(Cell cell){
+  Position cell_center;
+  cell_center.x = (cell.x > 0) ? (cell.x-1)*cell_size + cell_size * 0.5 : 
+                                  (cell.x+1)*cell_size - cell_size * 0.5;
+  cell_center.y = (cell.y > 0) ? (cell.y-1)*cell_size + cell_size * 0.5 : 
+                                  (cell.y+1)*cell_size - cell_size * 0.5;
+  return cell_center;
+}
+
+carriage_control::Carriage_Server::~Carriage_Server(){
+  delete nav_manager_;
+}
+void carriage_control::Carriage_Server::getModelPosition()
 {
     if (model_states_client.call(gazebo_srv))
         if (gazebo_srv.response.success){
@@ -43,37 +56,76 @@ void carriage_control::Carriage_Server::showCell(){
     }
     ROS_INFO("Current cell:\nx:%d, y:%d", cell.x, cell.y);
 }
-const carriage_control::Carriage_Server::Cell carriage_control::Carriage_Server::orderCells( carriage_control::Carriage_Server::Cell& goal){
-  Cell trajectory;
+void carriage_control::Carriage_Server::orderCells( carriage_control::Carriage_Server::Cell goal){
+  //cleaning stack
+  while (!cell_order_.empty())
+    cell_order_.pop();
+  if (goal.x == cell.x && goal.y == cell.y){
+    //if current cell is equal to goal cell
+    return;
+  }
   //update current position
   carriage_control::Carriage_Server::getCell();
-  trajectory.x = goal.x - cell.x;
-  trajectory.y = goal.y - cell.y;
-  return trajectory;
+  carriage_control::Carriage_Server::Cell middle;
+  cell_order_.push(goal);
+  middle.x = cell.x;
+  middle.y = goal.y;
+  cell_order_.push(middle);
 }
 void carriage_control::Carriage_Server::registerWheelSets(const WheelSet& x,const WheelSet& y){
   wheel_sets.along_x = x;
   wheel_sets.along_y = y;
 }
-bool carriage_control::Carriage_Server::moveRobot(const carriage_control::Carriage_Server::Cell trajectory){
-  //first, we go along x
-  try{
-    if (trajectory.x > 0){
-      setWheelsDown(wheel_sets.along_x);
-      setWheelsUp(wheel_sets.along_y);
-      spinWheels(wheel_sets.along_x, trajectory.x);
-      centralize();
-    }
-    if (trajectory.y > 0){
-      setWheelsDown(wheel_sets.along_y);
-      setWheelsUp(wheel_sets.along_x);
-      spinWheels(wheel_sets.along_y, trajectory.y);
-      centralize();
-    }
-  } catch (std::runtime_error &e){
-    //if something goes wrong we return false result representing problems
+bool carriage_control::Carriage_Server::checkOrder(){
+  if (cell_order_.empty())
     return false;
+  else
+  {
+    return true;
   }
+}
+void carriage_control::Carriage_Server::prepareRobot(WheelSet& wheel_set){
+  setWheelsUp(wheel_sets.along_y);
+  setWheelsUp(wheel_sets.along_x);
+  setWheelsDown(wheel_set);
+}
+bool carriage_control::Carriage_Server::moveRobot2Cell(carriage_control::Carriage_Server::Cell goal){
+  //first, we buid an order of visiting cells
+  orderCells(goal);
+  if (checkOrder()){
+    while (!cell_order_.empty()){
+      try{
+        Cell end = cell_order_.top();
+        cell_order_.pop();
+        Cell start = cell;
+        if (end.x - start.x == 0){
+          prepareRobot(wheel_sets.along_y);
+          nav_manager_->setCommandPublisher(&wheel_sets.along_y.twist_command_pub);
+        }
+        else {
+          prepareRobot(wheel_sets.along_x);
+          nav_manager_->setCommandPublisher(&wheel_sets.along_x.twist_command_pub);
+        }
+        geometry_msgs::PoseStamped pose_stamped;
+        pose_stamped.header.frame_id=base_name;
+        Position start_pos = getCellCenter(start);
+        Position end_pos = getCellCenter(end);
+        pose_stamped.pose.position.x = start_pos.x;
+        pose_stamped.pose.position.y = start_pos.y;
+        nav_manager_->setStartPose(pose_stamped);
+        pose_stamped.pose.position.x = end_pos.x;
+        pose_stamped.pose.position.y = end_pos.y;
+        nav_manager_->setEndPose(pose_stamped);
+        nav_manager_->build_traj();
+        nav_manager_->navigate();
+
+      } catch (std::runtime_error &e){
+        //if something goes wrong we return false result representing problems
+        return false;
+      }
+    }
+  }
+  //first, we go along x
   ROS_INFO("Robot arrived");
   //if everything okay, we bring true to outer scope
   return true;
@@ -84,7 +136,7 @@ void carriage_control::Carriage_Server::goalCB(){
   }
   carriage_control::carriageGoalConstPtr goal =  ac.acceptNewGoal();
   Cell goal_c; goal_c.x = goal->x_cell; goal_c.y = goal->y_cell;
-  if(moveRobot(orderCells(goal_c))){
+  if(moveRobot2Cell(goal_c)){
     result_.success = true;
     result_.used_time = seconds;
     ac.setSucceeded(result_, "Robot successfully arrived");
@@ -95,12 +147,6 @@ void carriage_control::Carriage_Server::goalCB(){
     ac.setAborted(result_, "Some error occurred");
   }
  
-}
-//this is high-level function to build trajectory
-void carriage_control::Carriage_Server::spinWheels(const WheelSet& wheel_set, int cells){
-  //set paths (start - current pos, end - the middle of the next cell)
-  //give paths to path-filter function to build comprehensible states of robot, also we give a reference to vector of Odometry msgs
-  //publish received states to cmd_vel
 }
 //this function centralizes robot directly into middle of cell, returnes status of completion
 bool carriage_control::Carriage_Server::centralize(){
@@ -125,30 +171,4 @@ double carriage_control::Carriage_Server::getCellCize(){
 }
 ros::NodeHandle& carriage_control::Carriage_Server::getNodeHandle(){
   return nh;
-}
-int main(int argc, char** argv){
-  ros::init(argc, argv, "carriage_server");
-  carriage_control::Carriage_Server crrg_srvr(ros::this_node::getName(), "bot", 0.78);
-  ros::NodeHandle& nh =  crrg_srvr.getNodeHandle();
-  carriage_control::WheelSet along_y;
-  along_y.cmd_vel="/cmd_vel_y";
-  along_y.drive_joint_command_pub[0] = nh.advertise<std_msgs::Float64>("/bot/1y_position_controller/command", 5); 
-  along_y.drive_joint_command_pub[1] = nh.advertise<std_msgs::Float64>("/bot/2y_position_controller/command", 5);
-  along_y.drive_joint_command_pub[2] = nh.advertise<std_msgs::Float64>("/bot/3y_position_controller/command", 5);
-  along_y.drive_joint_command_pub[3] = nh.advertise<std_msgs::Float64>("/bot/4y_position_controller/command", 5);
-  carriage_control::WheelSet along_x;
-  along_x.cmd_vel="/cmd_vel_x";
-  along_x.drive_joint_command_pub[0] = nh.advertise<std_msgs::Float64>("/bot/1x_position_controller/command", 5); 
-  along_x.drive_joint_command_pub[1] = nh.advertise<std_msgs::Float64>("/bot/2x_position_controller/command", 5);
-  along_x.drive_joint_command_pub[2] = nh.advertise<std_msgs::Float64>("/bot/3x_position_controller/command", 5);
-  along_x.drive_joint_command_pub[3] = nh.advertise<std_msgs::Float64>("/bot/4x_position_controller/command", 5);
-  crrg_srvr.registerWheelSets(along_x, along_y);
-  ros::Rate rate(4);
-  
-  while(ros::ok()){
-    ros::spinOnce();
-    crrg_srvr.showCell();
-    rate.sleep();
-  }
-    return 0;
 }
