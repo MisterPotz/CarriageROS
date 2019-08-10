@@ -16,6 +16,8 @@ void steering_mode();
 void up_and_down_mode();
 void maneuvre_mode();
 bool is_number(const std::string& s);
+//to set all demo flags false
+void cancelDemoTasks(carriage_control::carriageGoal& goal);
 
 int main(int argc, char **argv)
 {
@@ -84,6 +86,7 @@ int main(int argc, char **argv)
                       std::cout << "Good user), i'll send your coordinates \n";
                       goal.x_cell = Xcell;
                       goal.y_cell = Ycell;
+                      cancelDemoTasks(goal);
                       ac.sendGoal(goal);
 
                       //wait for the action to return
@@ -113,6 +116,7 @@ int main(int argc, char **argv)
               std::cout << "sending zero coordinates\n ";
               goal.x_cell = 0;
               goal.y_cell = 0;
+              cancelDemoTasks(goal);
               ac.sendGoal(goal);
 
               //wait for the action to return
@@ -160,7 +164,9 @@ int main(int argc, char **argv)
             {
               case 'l':{
                 std::cout << "Dropping down your govnowheels \n";
+                goal.demo_lift_wheels = false;
                 goal.demo_dropdown_wheels = true;
+                goal.demo_ride_circle = false;
                 ac.sendGoal(goal);
 
                 //wait for the action to return
@@ -178,7 +184,9 @@ int main(int argc, char **argv)
                 break;}
               case 'u':{
                 std::cout << "Lifting your govnowheels \n";
+                goal.demo_lift_wheels = true;
                 goal.demo_dropdown_wheels = false;
+                goal.demo_ride_circle = false;
                 ac.sendGoal(goal);
 
                 //wait for the action to return
@@ -225,6 +233,8 @@ int main(int argc, char **argv)
               case 'l':{
                 std::cout << "Riding around! \n";
                 goal.demo_ride_circle = true;
+                goal.demo_lift_wheels = false;
+                goal.demo_dropdown_wheels = false;
                 ac.sendGoal(goal);
 
                 //wait for the action to return
@@ -329,4 +339,11 @@ bool is_number(const std::string& s)
     std::string::const_iterator it = s.begin();
     while (it != s.end() && std::isdigit(*it)) ++it;
     return !s.empty() && it == s.end();
+}
+
+void cancelDemoTasks(carriage_control::carriageGoal& goal){
+  goal.demo_dropdown_wheels = false;
+  goal.demo_ride_circle = false;
+  goal.demo_lift_wheels = false;
+  
 }

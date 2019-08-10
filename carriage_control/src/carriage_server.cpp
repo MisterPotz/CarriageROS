@@ -21,6 +21,7 @@ carriage_control::Carriage_Server::Carriage_Server(std::string name, std::string
     nav_manager_->setCurrentPoseGetter(this);
     initializeVars();
     registerCallbacks();
+    cleanStack();
     ac.start();
   }
 void carriage_control::Carriage_Server::initializeVars(){
@@ -71,39 +72,27 @@ void carriage_control::Carriage_Server::showCell(){
     }
     ROS_INFO("Current cell:\nx:%d, y:%d", cell.x, cell.y);
 }
-void carriage_control::Carriage_Server::orderCells( carriage_control::Carriage_Server::Cell goal){
-  getCell();
+void carriage_control::Carriage_Server::orderCells( carriage_control::Carriage_Server::Cell start,carriage_control::Carriage_Server::Cell goal){
+  //getCell();
   //cleaning stack
-  while (!cell_order_.empty())
-    cell_order_.pop();
-  if (goal.x == cell.x && goal.y == cell.y){
-
+  if (goal.x == start.x && goal.y == start.y){
     //if current cell is equal to goal cell
     return;
   }
-  carriage_control::Carriage_Server::getCell();
-  if (goal.x == cell.x || goal.y == cell.y){
+  if (goal.x == start.x || goal.y == start.y){
     cell_order_.push(goal);
     return;
   }
   //update current position
   carriage_control::Carriage_Server::Cell middle;
   cell_order_.push(goal);
-  middle.x = cell.x;
+  middle.x = start.x;
   middle.y = goal.y;
   cell_order_.push(middle);
 }
 void carriage_control::Carriage_Server::registerWheelSets(const WheelSet& x,const WheelSet& y){
   wheel_sets.along_x = x;
   wheel_sets.along_y = y;
-}
-bool carriage_control::Carriage_Server::checkOrder(){
-  if (cell_order_.empty())
-    return false;
-  else
-  {
-    return true;
-  }
 }
 void carriage_control::Carriage_Server::prepareRobot(WheelSet& wheel_set){
   setWheelsDown(wheel_sets.along_y);
@@ -119,40 +108,58 @@ void carriage_control::Carriage_Server::fixRobot(){
   //giving some time to robot to become prepared
   time_control_->wait();
 }
-bool carriage_control::Carriage_Server::moveRobot2Cell(carriage_control::Carriage_Server::Cell goal){
+bool carriage_control::Carriage_Server::executeDemoTasks(carriage_control::carriageGoalConstPtr goal){
+  if (goal->demo_dropdown_wheels){
+    setWheelsDown(wheel_sets.along_x);
+    setWheelsDown(wheel_sets.along_y);
+    time_control_->wait();
+    return true;
+  }
+  if (goal->demo_lift_wheels){
+    setWheelsUp(wheel_sets.along_x);
+    setWheelsUp(wheel_sets.along_y);
+    time_control_->wait();
+    return true;
+  }
+  if (goal->demo_ride_circle){
+    cleanStack();
+    orderCircleCells();
+    return false;
+  }
+  return false;
+}
+bool carriage_control::Carriage_Server::moveRobot2Cell(){
   //first, we buid an order of visiting cells
   try{
-    orderCells(goal);
-    if (checkOrder()){
-      while (!cell_order_.empty()){
-          getCell();
-          Cell end = cell_order_.top();
-          cell_order_.pop();
-          Cell start = cell;
-          if (end.x - start.x == 0){
-            prepareRobot(wheel_sets.along_x); //giving wheel set that should be set up
-            nav_manager_->setCommandPublisher(&wheel_sets.along_y.twist_command_pub);
-          }
-          else {
-            prepareRobot(wheel_sets.along_y);
-            nav_manager_->setCommandPublisher(&wheel_sets.along_x.twist_command_pub);
-          }
-          geometry_msgs::PoseStamped pose_stamped;
-          pose_stamped.header.frame_id=base_name;
-          getModelPosition();
-          Position start_pos = position;
-          Position end_pos = getCellCenter(end);
-          pose_stamped.pose.position.x = start_pos.x;
-          pose_stamped.pose.position.y = start_pos.y;
-          nav_manager_->setStartPose(pose_stamped);
-          pose_stamped.pose.position.x = end_pos.x;
-          pose_stamped.pose.position.y = end_pos.y;
-          nav_manager_->setEndPose(pose_stamped);
-          nav_manager_->build_traj();
-          nav_manager_->navigate();
-          time_control_->wait();
-        } 
-      }
+    while (!cell_order_.empty()){
+        getCell();
+        Cell end = cell_order_.top();
+        cell_order_.pop();
+        Cell start = cell;
+        if (end.x - start.x == 0){
+          prepareRobot(wheel_sets.along_x); //giving wheel set that should be set up
+          nav_manager_->setCommandPublisher(&wheel_sets.along_y.twist_command_pub);
+        }
+        else {
+          prepareRobot(wheel_sets.along_y);
+          nav_manager_->setCommandPublisher(&wheel_sets.along_x.twist_command_pub);
+        }
+        geometry_msgs::PoseStamped pose_stamped;
+        pose_stamped.header.frame_id=base_name;
+        getModelPosition();
+        Position start_pos = position;
+        Position end_pos = getCellCenter(end);
+        pose_stamped.pose.position.x = start_pos.x;
+        pose_stamped.pose.position.y = start_pos.y;
+        nav_manager_->setStartPose(pose_stamped);
+        pose_stamped.pose.position.x = end_pos.x;
+        pose_stamped.pose.position.y = end_pos.y;
+        nav_manager_->setEndPose(pose_stamped);
+        nav_manager_->build_traj();
+        nav_manager_->navigate();
+        time_control_->wait();
+      } 
+      //cleaning stack is unnecessary - it cleans itself during excecution
       //fixing robot in-place
       fixRobot();
       ROS_INFO("Robot arrived!");
@@ -160,10 +167,10 @@ bool carriage_control::Carriage_Server::moveRobot2Cell(carriage_control::Carriag
     }catch (const std::invalid_argument& e){
         ROS_INFO("%s", e.what());
     }catch (const std::runtime_error &e){
-          //if something goes wrong we return false result representing problems
-          ROS_INFO("%s", e.what());
-          return false;
-        }
+      //if something goes wrong we return false result representing problems
+      ROS_INFO("%s", e.what());
+      return false;
+    }
   return false;
   //first, we go along x
   //if everything okay, we bring true to outer scope
@@ -177,29 +184,40 @@ bool carriage_control::Carriage_Server::checkGoal(Cell c){
     return true;
 }
 void carriage_control::Carriage_Server::goalCB(){
+  cleanStack();
+  getCell();
   if (ac.isActive()){
     return;
   }
   carriage_control::carriageGoalConstPtr goal =  ac.acceptNewGoal();
   Cell goal_c; goal_c.x = goal->x_cell; goal_c.y = goal->y_cell;
-  if (!checkGoal(goal_c)){
-    ac.setAborted(result_, "Task declined - same cell");
-    ROS_INFO("Task declined: x:%f, y:%f", goal_c.x, goal_c.y);
-    return;
-  }
   if (goal_c.x == 0 && goal_c.y ==0){
     goal_c.x = 1;
     goal_c.y = 1;
   }
-  ROS_INFO("Accepting new goal, x: %f, y:%f", goal_c.x, goal_c.y);
+  bool executeDemoTaskFlag = false;
+  if (executeDemoTasks(goal)){
+    //filling stack with destinations
+    executeDemoTaskFlag = true;
+    ROS_INFO("Demo action performed");
+    ac.setSucceeded(result_,"Demo action performed");
+  }
+  //check goal function updates current position
+  ROS_INFO("Accepting new goal, x: %d, y:%d", goal_c.x, goal_c.y);
+  if (cell_order_.empty()){
+    orderCells(cell, goal_c);
+  }
   //moving robot to goal
-  if(moveRobot2Cell(goal_c)){
+  if(!executeDemoTaskFlag && moveRobot2Cell()){
     result_.success = true;
     result_.used_time = seconds;
     ac.setSucceeded(result_, "Robot successfully arrived");
 
   }
   else{
+    if (executeDemoTaskFlag){
+      return;
+    }
     result_.success = false;
     result_.used_time = seconds;
     ac.setAborted(result_, "Some error occurred");
@@ -239,4 +257,22 @@ geometry_msgs::Pose carriage_control::Carriage_Server::getCurrentPose(){
   getModelPosition();
   pose = gazebo_srv.response.pose;
   return pose;
+}
+void carriage_control::Carriage_Server::cleanStack(){
+  while (!cell_order_.empty())
+    cell_order_.pop();
+}
+void carriage_control::Carriage_Server::orderCircleCells(){
+  Cell a; Cell b;
+  getCell();
+  a = cell;
+  //b -opposite to a
+  b.x = -a.x;
+  b.y = -a.y;
+  ROS_INFO("Opposite cell: x:%d, y:%d", b.x, b.y);
+  //another. finalizing circle
+  orderCells(b, a);
+  //one direction
+  orderCells(a,b);
+  
 }

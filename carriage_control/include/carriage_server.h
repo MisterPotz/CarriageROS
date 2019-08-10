@@ -46,12 +46,14 @@ class Carriage_Server : public PoseGetter{
         Carriage_Server(const std::string name, const std::string robot_name, const std::string base_name, float _cell_size);
         ~Carriage_Server();
         void showCell();
-        bool moveRobot2Cell(Cell goal);
+        
         void registerWheelSets(const WheelSet& x, const WheelSet& y);
         ros::NodeHandle& getNodeHandle();
         double getCellCize();
         void setTimeControl(TimeControl* time_control);
 private:
+        //executes the cell_stack order
+        bool moveRobot2Cell();
         //wheel_parameters
         const float upper_position = 0.0f;
         const float lower_position = -0.4f;
@@ -85,20 +87,27 @@ private:
         void initializeVars();
         void registerCallbacks();
         void goalCB();
-        //fills cell_stack
-        void orderCells(Cell goal);
+        //fills cell_stack to build a plan to the goal cell from start cell
+        void orderCells(Cell start, Cell goal);
         void setWheelsUp(WheelSet& wheel_set);
         void setWheelsDown(WheelSet& wheel_set);
         //centralizes robot so it fits perfectly into the cell
         bool centralize();
-        //return false if current cell is the goal
-        bool checkOrder();
         //prepares robot to move in the direction of wheel_set
         void prepareRobot(WheelSet& wheel_set);
+        //get accurate coordinates of cell
         Position getCellCenter(Cell cell);
+        //return current coordinates via geometry_msgs::Pose
         geometry_msgs::Pose getPose();
+        //fixate robot to current cell physically
         void fixRobot();
+        //check if the goal is the same to the curr pos
         bool checkGoal(Cell c);
+        bool executeDemoTasks(carriage_control::carriageGoalConstPtr goal);
+        //cleans cells stack
+        void cleanStack();
+        //orders a circle returning to starting position
+        void orderCircleCells();
 };
 };
 
