@@ -17,12 +17,14 @@ int main(int argc, char** argv){
   along_y.drive_joint_command_pub[1] = nh.advertise<std_msgs::Float64>("/bot/2y_position_controller/command", 5);
   along_y.drive_joint_command_pub[2] = nh.advertise<std_msgs::Float64>("/bot/3y_position_controller/command", 5);
   along_y.drive_joint_command_pub[3] = nh.advertise<std_msgs::Float64>("/bot/4y_position_controller/command", 5);
+  along_y.axis = 'y';
   carriage_control::WheelSet along_x;
   along_x.twist_command_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel_x", 4);
   along_x.drive_joint_command_pub[0] = nh.advertise<std_msgs::Float64>("/bot/5x_position_controller/command", 5); 
   along_x.drive_joint_command_pub[1] = nh.advertise<std_msgs::Float64>("/bot/6x_position_controller/command", 5);
   along_x.drive_joint_command_pub[2] = nh.advertise<std_msgs::Float64>("/bot/7x_position_controller/command", 5);
   along_x.drive_joint_command_pub[3] = nh.advertise<std_msgs::Float64>("/bot/8x_position_controller/command", 5);
+  along_x.axis = 'x';
   //waiting some time for topics to become registered within ROS
   sleep.sleep();
   crrg_srvr.registerWheelSets(along_x, along_y);

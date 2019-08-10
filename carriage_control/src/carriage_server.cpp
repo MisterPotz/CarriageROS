@@ -139,10 +139,12 @@ bool carriage_control::Carriage_Server::moveRobot2Cell(){
         if (end.x - start.x == 0){
           prepareRobot(wheel_sets.along_x); //giving wheel set that should be set up
           nav_manager_->setCommandPublisher(&wheel_sets.along_y.twist_command_pub);
+          nav_manager_->setAxis(wheel_sets.along_y.axis);
         }
         else {
           prepareRobot(wheel_sets.along_y);
           nav_manager_->setCommandPublisher(&wheel_sets.along_x.twist_command_pub);
+          nav_manager_->setAxis(wheel_sets.along_x.axis);
         }
         geometry_msgs::PoseStamped pose_stamped;
         pose_stamped.header.frame_id=base_name;
@@ -158,6 +160,8 @@ bool carriage_control::Carriage_Server::moveRobot2Cell(){
         nav_manager_->build_traj();
         nav_manager_->navigate();
         time_control_->wait();
+        ROS_INFO("\t Trajectory finished. Initiating centralizing.");
+        nav_manager_->centralize();
       } 
       //cleaning stack is unnecessary - it cleans itself during excecution
       //fixing robot in-place
@@ -224,10 +228,7 @@ void carriage_control::Carriage_Server::goalCB(){
   }
  
 }
-//this function centralizes robot directly into middle of cell, returnes status of completion
-bool carriage_control::Carriage_Server::centralize(){
 
-}
 void carriage_control::Carriage_Server::setWheelsUp(WheelSet& wheel_set){
   std_msgs::Float64 msg;
   msg.data = upper_position;

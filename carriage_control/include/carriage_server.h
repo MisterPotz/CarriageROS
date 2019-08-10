@@ -34,6 +34,7 @@ class TimeControl{
 struct WheelSet{
     ros::Publisher twist_command_pub;
     ros::Publisher drive_joint_command_pub[4];
+    char axis;
 };
 //inhereting interface so navigation class can get current position
 class Carriage_Server : public PoseGetter{
@@ -91,8 +92,7 @@ private:
         void orderCells(Cell start, Cell goal);
         void setWheelsUp(WheelSet& wheel_set);
         void setWheelsDown(WheelSet& wheel_set);
-        //centralizes robot so it fits perfectly into the cell
-        bool centralize();
+        
         //prepares robot to move in the direction of wheel_set
         void prepareRobot(WheelSet& wheel_set);
         //get accurate coordinates of cell

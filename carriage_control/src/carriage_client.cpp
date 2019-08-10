@@ -167,9 +167,8 @@ int main(int argc, char **argv)
             {
               case 'l':{
                 std::cout << "Dropping down robowheels \n";
+                cancelDemoTasks(goal);
                 goal.demo_dropdown_wheels = true;
-                goal.demo_ride_circle = false;
-                goal.demo_lift_wheels = false;
                 ac.sendGoal(goal);
 
                 //wait for the action to return
@@ -187,8 +186,6 @@ int main(int argc, char **argv)
                 break;}
               case 'u':{
                 std::cout << "Lifting your robowheels \n";
-                goal.demo_dropdown_wheels = false;
-                goal.demo_ride_circle = false;
                 cancelDemoTasks(goal);
                 goal.demo_lift_wheels=true;
                 ac.sendGoal(goal);
@@ -236,9 +233,8 @@ int main(int argc, char **argv)
             {
               case 'l':{
                 std::cout << "Riding around! \n";
+                cancelDemoTasks(goal);
                 goal.demo_ride_circle = true;
-                goal.demo_lift_wheels = false;
-                goal.demo_dropdown_wheels = false;
                 ac.sendGoal(goal);
 
                 //wait for the action to return

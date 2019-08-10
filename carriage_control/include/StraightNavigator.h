@@ -21,6 +21,7 @@ class StraightNavigator{
         //-------_!!!!!!!!!!!!_-------стремная проблема может вознукнуть с path_
         nav_msgs::Path path_;
         ros::Publisher * command_publisher_;
+        char axis;
         PoseGetter* pose_getter_; //pointer to a function that get current position
         double a_max_; //max acceleration;
         double v_cruise_; //max velocity;
@@ -35,8 +36,9 @@ class StraightNavigator{
         void calculateShortDistance();
         //gives 1 in case of long distance, 0 in case of short distance
         bool verifyLongDistance();
-        void centralize(geometry_msgs::Pose goal);
         void updatePose();
+        void cleanPath();
+        geometry_msgs::PoseStamped getEndPose();
     public:
         void setFrequency(double freq);
         void setSamplingTime(double t);
@@ -50,5 +52,7 @@ class StraightNavigator{
         void setEndPose(geometry_msgs::PoseStamped end_pose);
         void setCommandPublisher(ros::Publisher* command_publisher);
         void setCurrentPoseGetter(PoseGetter* pose_getter);
+        void setAxis(char axis);
+        void centralize();
 };
 #endif

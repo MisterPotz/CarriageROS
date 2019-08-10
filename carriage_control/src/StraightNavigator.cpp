@@ -37,70 +37,57 @@ void StraightNavigator::setEndPose(geometry_msgs::PoseStamped end_pose){
 
 void StraightNavigator::build_triangle_traj(geometry_msgs::PoseStamped start, geometry_msgs::PoseStamped end,
             std::vector<nav_msgs::Odometry> &vec_of_states){
-    double x_start = start.pose.position.x;
-    double x_end = end.pose.position.x;
-    double y_start = start.pose.position.y;
-    double y_end = end.pose.position.y;
-    short y_sign = 1;
-    short x_sign = 1;
-    short vel_sign = 1;
-    double dx = x_end - x_start;
-    double dy = y_end - y_start;
-    ROS_INFO("\tBuilding traj -- dx: %f, dy: %f", dx, dy);
-    if (dx <0 ) x_sign *=-1;
-    if (dy <0) y_sign *=-1;
-    //because carriage robot can move without reoorienting its pose, the directin in which it rides
-    //should be understood. 0.01 here is error
-    if (abs(dy) < 0.1){
-        vel_sign = x_sign;
-    } else
-    {
-        vel_sign = y_sign;
+    double pos_start = start.pose.position.x;
+    double pos_end = end.pose.position.x;
+    switch (axis){
+        case 'x': pos_start = start.pose.position.x; pos_end=end.pose.position.x; break;
+        case 'y': pos_start = start.pose.position.y; pos_end=end.pose.position.y; break;
     }
-    double psi_des = atan2(dy,dx);
-    ROS_INFO("\t\tPsi b//n poses: %f", psi_des);
-    double distance = sqrt(dx*dx + dy*dy);
-    double t_ramp = sqrt(distance / a_max_);
-    double v_peak = t_ramp * a_max_*vel_sign;
+    double d_pos = pos_end - pos_start;
+    double sign = (d_pos > 0.0) ? 1.0 : -1.0;
+    ROS_INFO("\t\tBuilding traj -- d_distance: %f", d_pos);
+    double t_ramp = sqrt(abs(d_pos) / a_max_);
+    double v_peak = t_ramp * a_max_*sign;
     //how many points in one trajectory will be
     int ramp_res = round(t_ramp/dt_);
     ROS_INFO("\t\t ramp res: %d", ramp_res);
     nav_msgs::Odometry state;
+    nav_msgs::Odometry zero_state;
+    zero_state.twist.twist.angular.x = 0;zero_state.twist.twist.angular.y = 0;zero_state.twist.twist.angular.z = 0;
+    zero_state.twist.twist.linear.x=0;zero_state.twist.twist.linear.y=0;zero_state.twist.twist.linear.z=0;
     state.header = start.header;
+    state.pose = zero_state.pose;
+    state.twist = zero_state.twist;
     //orientation of the robot in the end is the same as in the start
     state.pose.pose = start.pose;
-    //we are not modifying twist because robot is considered to be stopped at the beginning
-    state.twist.twist.angular.x = 0;state.twist.twist.angular.y = 0;state.twist.twist.angular.z = 0;
-    state.twist.twist.linear.x=0;state.twist.twist.linear.y=0;state.twist.twist.linear.z=0;
-    
-    double x_des = x_start;
-    double y_des = y_start;
+
+    double des_pos = pos_start;
     vec_of_states.push_back(state);
     double des_vel = 0.0; 
     double t = 0.0;
     //ramp-up part
     for (int i =0; i < ramp_res; i++){
         t+=dt_;
-        des_vel = t * a_max_*vel_sign;
+        des_vel = t * a_max_*sign;
         state.twist.twist.linear.x = des_vel;
-        x_des = x_start + 0.5 * a_max_ * pow(t, 2) * cos(psi_des)*x_sign;
-        y_des = y_start + 0.5 * a_max_ * pow(t,2) * sin(psi_des)*y_sign;
-        state.pose.pose.position.x = x_des;
-        state.pose.pose.position.y = y_des;
+        state.pose = zero_state.pose;
+        if (axis == 'x') state.pose.pose.position.x = des_pos + 0.5 * a_max_ * pow(t, 2)*sign;
+        else state.pose.pose.position.y = des_pos + 0.5 * a_max_ * pow(t, 2)*sign;
         vec_of_states.push_back(state);
     }
     //ramp-down part
     des_vel = v_peak;
     for (int i =0; i < ramp_res; i++){
         t+=dt_;
-        des_vel = v_peak - a_max_*(t - t_ramp)*vel_sign; //Euler one-step integration
-        x_des = distance - 0.5 * a_max_ * pow(2*t_ramp - t, 2) * cos(psi_des)*x_sign;
-        y_des = distance - 0.5 * a_max_ * pow(2*t_ramp - t, 2) * sin(psi_des)*y_sign;
+        des_vel = v_peak - a_max_*(t - t_ramp)*sign; //Euler one-step integration
         state.twist.twist.linear.x = des_vel;
-        state.pose.pose.position.x = x_des;
-        state.pose.pose.position.y = y_des;
+        state.pose = zero_state.pose;
+        if (axis == 'x') state.pose.pose.position.x = d_pos - 0.5 * a_max_ * pow(2*t_ramp - t, 2) *sign;
+        else state.pose.pose.position.y = d_pos - 0.5 * a_max_ * pow(2*t_ramp - t, 2) *sign;
         vec_of_states.push_back(state);
     }
+    state.pose = zero_state.pose;
+    state.twist = zero_state.twist;
     //now we should push the end state
     state.pose.pose = end.pose;
     //full stop
@@ -111,29 +98,15 @@ void StraightNavigator::build_triangle_traj(geometry_msgs::PoseStamped start, ge
 
 void StraightNavigator::build_trapezoidal_traj(geometry_msgs::PoseStamped start, geometry_msgs::PoseStamped end,
             std::vector<nav_msgs::Odometry> &vec_of_states){
-    double x_start = start.pose.position.x;
-    double x_end = end.pose.position.x;
-    double y_start = start.pose.position.y;
-    double y_end = end.pose.position.y;
-    short y_sign = 1;
-    short x_sign = 1;
-    short vel_sign = 1;
-    double dx = x_end - x_start;
-    double dy = y_end - y_start;
-    ROS_INFO("\t\tBuilding traj -- dx: %f, dy: %f", dx, dy);
-    if (dx <0 ) x_sign *=-1;
-    if (dy <0) y_sign *=-1;
-    //because carriage robot can move without reoorienting its pose, the directin in which it rides
-    //should be understood. 0.01 here is error
-    if (abs(dy) < 0.1){
-        vel_sign = x_sign;
-    } else
-    {
-        vel_sign = y_sign;
+    double pos_start = start.pose.position.x;
+    double pos_end = end.pose.position.x;
+    switch (axis){
+        case 'x': pos_start = start.pose.position.x; pos_end=end.pose.position.x; break;
+        case 'y': pos_start = start.pose.position.y; pos_end=end.pose.position.y; break;
     }
-    double psi_des = atan2(dy,dx);
-    ROS_INFO("\t\tPsi b//n poses: %f", psi_des);
-    double distance = sqrt(dx*dx + dy*dy);
+    double d_pos = pos_end - pos_start;
+    double sign = (d_pos > 0.0) ? 1.0 : -1.0;
+    ROS_INFO("\t\tBuilding traj -- d_distance: %f", d_pos);
     //in trapezoidal logic we find ramp time according to the v_cruise_ which is max
     double t_ramp = v_cruise_ / a_max_;
     double distance_ramp = a_max_ * t_ramp * t_ramp * 0.5;
@@ -141,43 +114,43 @@ void StraightNavigator::build_trapezoidal_traj(geometry_msgs::PoseStamped start,
     int ramp_res = round(t_ramp/dt_);
     ROS_INFO("\t\t ramp res: %d", ramp_res);
     nav_msgs::Odometry state;
+    nav_msgs::Odometry zero_state;
+    zero_state.twist.twist.angular.x = 0;zero_state.twist.twist.angular.y = 0;zero_state.twist.twist.angular.z = 0;
+    zero_state.twist.twist.linear.x=0;zero_state.twist.twist.linear.y=0;zero_state.twist.twist.linear.z=0;
     state.header = start.header;
+    state.pose = zero_state.pose;
+    state.twist = zero_state.twist;
     //orientation of the robot in the end is the same as in the start
     state.pose.pose = start.pose;
     //we are not modifying twist because robot is considered to be stopped at the beginning
-    state.twist.twist.angular.x = 0;state.twist.twist.angular.y = 0;state.twist.twist.angular.z = 0;
-    state.twist.twist.linear.x=0;state.twist.twist.linear.y=0;state.twist.twist.linear.z=0;
     
-    double x_des = x_start;
-    double y_des = y_start;
+    double des_pos = pos_start;
     vec_of_states.push_back(state);
     double des_vel = 0.0; 
     double t = 0.0;
     //ramp-up part
     for (int i =0; i < ramp_res; i++){
         t+=dt_;
-        des_vel = t * a_max_*vel_sign;
+        des_vel = t * a_max_*sign;
         state.twist.twist.linear.x = des_vel;
-        x_des = x_start + 0.5 * a_max_ * pow(t, 2) * cos(psi_des)*x_sign;
-        y_des = y_start + 0.5 * a_max_ * pow(t,2) * sin(psi_des)*y_sign;
-        state.pose.pose.position.x = x_des;
-        state.pose.pose.position.y = y_des;
+        state.pose = zero_state.pose;
+        if (axis == 'x') state.pose.pose.position.x = des_pos + 0.5 * a_max_ * pow(t, 2)*sign;
+        else state.pose.pose.position.y = des_pos + 0.5 * a_max_ * pow(t, 2)*sign;
         vec_of_states.push_back(state);
     }
     //preparing for straight- velocity profile part
-    double distance_cruise = distance - 2*distance_ramp;
+    double distance_cruise = abs(d_pos) - 2*distance_ramp;
     double t_cruise = distance_cruise / v_cruise_;
     int cruise_res = round(t_cruise / dt_);
     ROS_INFO("\t\t cruise res: %d", ramp_res);
     //middle-part, same velocity zero acceleration
-    des_vel = v_cruise_*vel_sign;
+    des_vel = v_cruise_*sign;
     for (int i = 0; i < cruise_res; i++){
         t+=dt_;
-        x_des = distance_ramp + v_cruise_ * (t-t_ramp) * cos(psi_des)*x_sign;
-        y_des = distance_ramp + v_cruise_ * (t-t_ramp) * sin(psi_des)*y_sign;
-        state.pose.pose.position.x = x_des;
-        state.pose.pose.position.y = y_des;
-        state.twist.twist.linear.x = v_cruise_;
+        state.pose = zero_state.pose;
+        if (axis == 'x') state.pose.pose.position.x = distance_ramp + v_cruise_ * (t-t_ramp)*sign;
+        else state.pose.pose.position.y = distance_ramp + v_cruise_ * (t-t_ramp)*sign;
+        state.twist.twist.linear.x = des_vel;
         vec_of_states.push_back(state);
     } 
     double time_part2of3 = t_ramp+ t_cruise;
@@ -185,14 +158,15 @@ void StraightNavigator::build_trapezoidal_traj(geometry_msgs::PoseStamped start,
     //ramp-down part
     for (int i =0; i < ramp_res; i++){
         t+=dt_;
-        des_vel = v_cruise_ - a_max_*(t - time_part2of3)*vel_sign;
-        x_des = distance - 0.5 * a_max_ * pow(total_time - t, 2) * cos(psi_des)*x_sign;
-        y_des = distance - 0.5 * a_max_ * pow(total_time - t, 2) * sin(psi_des)*y_sign;
+        des_vel = v_cruise_*sign - a_max_*(t - time_part2of3)*sign;
         state.twist.twist.linear.x = des_vel;
-        state.pose.pose.position.x = x_des;
-        state.pose.pose.position.y = y_des;
+        state.pose = zero_state.pose;
+        if (axis == 'x') state.pose.pose.position.x = d_pos - 0.5 * a_max_ * pow(total_time - t, 2) *sign;
+        else state.pose.pose.position.y = d_pos - 0.5 * a_max_ * pow(total_time - t, 2) *sign;
         vec_of_states.push_back(state);
     }
+    state.pose = zero_state.pose;
+    state.twist = zero_state.twist;
     //now we should push the end state
     state.pose.pose = end.pose;
     //full stop
@@ -214,8 +188,6 @@ void StraightNavigator::navigate(){
     }
     updatePose();
     ROS_INFO("Current pose: x:%f, y:%f", current.position.x, current.position.y);
-    //ROS_INFO("\t Trajectory finished. Initiating centralizing.");
-    //centralize(path_.poses[1].pose);
 }
 
 void StraightNavigator::build_traj(){
@@ -264,66 +236,57 @@ void StraightNavigator::updatePose(){
     current.position.y = temp.position.y;
     current.orientation = temp.orientation;
 }
-void StraightNavigator::centralize(geometry_msgs::Pose goal){
+void StraightNavigator::centralize(){
     //getting current pose
     updatePose();
-    double  *curr_x, *curr_y;
-    double goal_x, goal_y, dx, dy;
-    curr_x = &current.position.x;
-    curr_y = &current.position.y;
-    goal_x = goal.position.x;
-    goal_y = goal.position.y;
-    dx = goal_x - *curr_x;
-    dy = goal_y - *curr_y;
-    double current_err = sqrt(dx*dx + dy*dy);
-    double error = 0.0005; //allowed deviation
-    //now let's analyze where is the bigger error
-    double *current_watched_value, *goal_watched_value;
-    if (0){ //abs(dx) > abs(dy)
-        current_watched_value = curr_x;
-        goal_watched_value = &goal_x;
-        ROS_INFO("\t\tcentralizing along x");
-    } else
-    {
-        current_watched_value = curr_y;
-        goal_watched_value = &goal_y;
-        ROS_INFO("\t\tcentralizing along y");
+    double *current_value;
+    double goal_point;
+    geometry_msgs::Pose saved_goal = getEndPose().pose;
+    //selecting values to fix according to the current chosen axis
+    switch (axis){
+        case 'x': current_value = &current.position.x; goal_point=saved_goal.position.x; break;
+        case 'y': current_value = &current.position.y; goal_point=saved_goal.position.y; break;
+        default: ROS_INFO("\t\t\tSome really strange thins occured in StraightNavigator::centralize()"); return;
     }
-    double des_speed;
-    double sleep_freq = 2; //4 times in a second, 250 ms
-    double speed_sign = 1.0; //tells in which direction to ride
-    double difference = -*current_watched_value + *goal_watched_value;
-    current_err = abs(difference); 
-    ros::Rate sleeper(sleep_freq);
-    ROS_INFO("\t\t Current pos: %f, goal pos: %f, difference: %f, given error: %f", *current_watched_value, *goal_watched_value, current_err, error);
-    
-    while(current_err >= error){
-        //understanging in which direction to move
-        // if (difference > 0){
-        //     speed_sign = 1;
-        // }
-        // else{
-        //     speed_sign = -1;
-        // }
-        // //finding speed
-        // des_speed = abs(difference) * sleep_freq * speed_sign;
-        // geometry_msgs::Twist msg;
-        // msg.linear.x = des_speed;
-        // //publishing message to move
-        // (*command_publisher_).publish(msg);
-        // //sleeping
-        // sleeper.sleep();
-        // msg.linear.x = 0;
-        // //stopping
-        // (*command_publisher_).publish(msg);
-        //updating pose
-        //build_triangle_traj()
+    double current_err = goal_point - *current_value;
+    double error = 0.002; //allowed deviation
+    double sleeping_time = 0.1;
+    ros::Duration wait(sleeping_time);
+    double speed_sign = (current_err >0) ? 1 : -1;
+    double speed = abs(current_err)/ sleeping_time * speed_sign;
+    ROS_INFO("\t\t Current pos: %f, goal pos: %f, difference: %f, given error: %f", *current_value, goal_point, current_err, error); 
+    do{
+        // cleanPath();
+        // geometry_msgs::PoseStamped pose;
+        // //setting starting pose
+        // pose.pose = current;
+        // setStartPose(pose);
+        // //setting ending pose
+        // pose.pose = saved_goal;
+        // setEndPose(pose);
+        //build_traj();
+        //navigate();
+        geometry_msgs::Twist msg;
+        msg.linear.x = speed;
+        command_publisher_->publish(msg);
+        wait.sleep();
+        msg.linear.x = 0;
+        command_publisher_->publish(msg);
         updatePose();
-        //re-finding difference
-        difference = -*current_watched_value + *goal_watched_value;
-        //finding error
-        current_err = abs(difference); 
-        ROS_INFO("\t\t Current pos: %f, goal pos: %f, difference: %f, given error: %f", *current_watched_value, *goal_watched_value, current_err, error);
+        current_err = goal_point - *current_value;
+        speed_sign = (current_err >0) ? 1 : -1;
+        speed = abs(current_err)/ sleeping_time * speed_sign;
+        ROS_INFO("\t\t Current pos: %f, goal pos: %f, difference: %f, given error: %f", *current_value, goal_point, current_err, error); 
+    }while(abs(goal_point - *current_value) >= error );
 
-    }
+}
+
+void StraightNavigator::cleanPath(){
+    path_.poses.clear();
+}
+void StraightNavigator::setAxis(char ch){
+    axis = ch;
+}
+geometry_msgs::PoseStamped StraightNavigator::getEndPose(){
+    return path_.poses[1];
 }
