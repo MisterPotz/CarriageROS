@@ -3,13 +3,12 @@
   <!-- ARGS -->
   <arg name="gui" default="true"/>
   <arg name="rvizconfig" default="$(find configs)/carriage_rviz.rviz" />
-
+  <arg name="meshDirectoryPath"  default="$(find model)/" />
   <!-- PARAMS -->
   <param name="use_gui" value="$(arg gui)"/>
   <!--param name="robot_description" command="$(find xacro)/xacro '$(find bot)/src/model/bot.xacro'"/-->
-  <param name="robot_description" command="$(find xacro)/xacro '$(find model)/bot.xacro'"/>
+  <param name="robot_description" command="$(find xacro)/xacro '$(find model)/bot.xacro'  meshDirectory:=$(arg meshDirectoryPath)"/>
   <param name="cells_description_sdf" textfile="$(find model)/cells.sdf"/>
-
   
 
   <!-- Load all available controllers -->
@@ -27,7 +26,7 @@
 
   <!-- ADDITIONAL NODES -->
   <node name="bot_spawn" pkg="gazebo_ros" type="spawn_model" output="screen"
-   args="-urdf -param robot_description -model bot -z 1 -x 0.375 -y 0.375" />
+   args="-urdf -param robot_description -model bot -z 1 -x 0.3775 -y 0.3775" />
 
   <node name="spawn_cells" pkg="gazebo_ros" type="spawn_model" output="screen"
    args="-sdf -param cells_description_sdf -model cells -x -0 -y 0 -z 0.0"/>

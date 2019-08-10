@@ -18,23 +18,45 @@
 #include <StraightNavigator.h>
 #include <stack>
 
+
+
 namespace carriage_control{
+
+class TimeControl{
+    private:
+        ros::Rate sleep_rate_;
+    public:
+        TimeControl(double rate);
+        ~TimeControl();
+        void wait();
+};
 
 struct WheelSet{
     ros::Publisher twist_command_pub;
     ros::Publisher drive_joint_command_pub[4];
 };
-
-class Carriage_Server{
-    private:
-        //wheel_parameters
-        const float upper_position = 0.0f;
-        const float lower_position = -0.4f;
-        const float cell_size; //total size of one cell
+//inhereting interface so navigation class can get current position
+class Carriage_Server : public PoseGetter{
+    public:
+        virtual geometry_msgs::Pose getCurrentPose();
         struct Cell{
             int32_t x;
             int32_t y;
         } cell; //current cell
+        Carriage_Server(const std::string name, const std::string robot_name, const std::string base_name, float _cell_size);
+        ~Carriage_Server();
+        void showCell();
+        bool moveRobot2Cell(Cell goal);
+        void registerWheelSets(const WheelSet& x, const WheelSet& y);
+        ros::NodeHandle& getNodeHandle();
+        double getCellCize();
+        void setTimeControl(TimeControl* time_control);
+private:
+        //wheel_parameters
+        const float upper_position = 0.0f;
+        const float lower_position = -0.4f;
+        const float cell_size; //total size of one cell
+        TimeControl* time_control_;
         std::stack<Cell> cell_order_; //navigation order of cells to reach goal
         struct Position{
             double x;
@@ -74,15 +96,9 @@ class Carriage_Server{
         //prepares robot to move in the direction of wheel_set
         void prepareRobot(WheelSet& wheel_set);
         Position getCellCenter(Cell cell);
-
-    public:
-        Carriage_Server(const std::string name, const std::string robot_name, const std::string base_name, float _cell_size);
-        ~Carriage_Server();
-        void showCell();
-        bool moveRobot2Cell(Cell goal);
-        void registerWheelSets(const WheelSet& x, const WheelSet& y);
-        ros::NodeHandle& getNodeHandle();
-        double getCellCize();
+        geometry_msgs::Pose getPose();
+        void fixRobot();
+        bool checkGoal(Cell c);
 };
 };
 

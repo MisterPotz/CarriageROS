@@ -5,16 +5,23 @@
 #include <ros/ros.h>
 #include <nav_msgs/Path.h>
 #include <nav_msgs/Odometry.h>
+#include <geometry_msgs/Pose.h>
 #include <vector>
 #include <string>
 #include <math.h>
+class PoseGetter{
+    public:
+        virtual geometry_msgs::Pose getCurrentPose() = 0;
+};
 
 class StraightNavigator{
     private:
+        geometry_msgs::Pose current;
         std::vector<nav_msgs::Odometry> vec_of_states_;
         //-------_!!!!!!!!!!!!_-------стремная проблема может вознукнуть с path_
         nav_msgs::Path path_;
         ros::Publisher * command_publisher_;
+        PoseGetter* pose_getter_; //pointer to a function that get current position
         double a_max_; //max acceleration;
         double v_cruise_; //max velocity;
         double short_distance_; //if distance between poses is less/equal to this distance
@@ -28,6 +35,8 @@ class StraightNavigator{
         void calculateShortDistance();
         //gives 1 in case of long distance, 0 in case of short distance
         bool verifyLongDistance();
+        void centralize(geometry_msgs::Pose goal);
+        void updatePose();
     public:
         void setFrequency(double freq);
         void setSamplingTime(double t);
@@ -36,9 +45,10 @@ class StraightNavigator{
         void navigate();
         void build_traj();
         //pushes as first pose in path_
-        void setStartPose(geometry_msgs::PoseStamped &start_pose);
+        void setStartPose(geometry_msgs::PoseStamped start_pose);
         //pushes as second pose in path_
-        void setEndPose(geometry_msgs::PoseStamped &end_pose);
+        void setEndPose(geometry_msgs::PoseStamped end_pose);
         void setCommandPublisher(ros::Publisher* command_publisher);
+        void setCurrentPoseGetter(PoseGetter* pose_getter);
 };
 #endif

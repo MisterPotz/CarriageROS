@@ -1,7 +1,7 @@
 <?xml version='1.0'?>
 <sdf version='1.6'>
-  <model name='cells'>
-    <link name='base_link'>
+  <model name='wheel_smooth'>
+    <link name='wheel'>
       <inertial>
         <mass>1000</mass>
         <inertia>
@@ -14,7 +14,7 @@
         </inertia>
         <pose frame=''>0 0 0 0 0 0</pose>
       </inertial>
-      <pose frame=''>-1.5175 -1.5175 0 1.5707 0 0</pose>
+      <pose frame=''>-0.0175 -0.0175 0 1.5707 0 0</pose>
       <!-- <pose frame=''>-1.50175 -1.50175 0 1.5707 0 0</pose> -->
 
       <gravity>1</gravity>
