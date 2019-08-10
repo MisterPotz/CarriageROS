@@ -66,8 +66,11 @@ int main(int argc, char **argv)
               std::cin >> str_2;
               
               // checking foolish users data
-              ok_1 = is_number(str_1);
+                ok_1 = is_number(str_1);
               ok_2 = is_number(str_2);
+              
+              
+              
 
               if ((ok_1) && (ok_2))
               {
@@ -75,7 +78,7 @@ int main(int argc, char **argv)
                 Xcell = atoi(str_1);
                 Ycell = atoi(str_2);
                 // another check for foolish users data
-                if((Xcell > 200) || (Ycell > 200) || (Xcell <0 ) || (Ycell < 0))
+                if((Xcell > 200) || (Ycell > 200) || (Xcell < -200 ) || (Ycell < -200))
                     {
                       std::cout << "Please, enter correct coordinates! \n";
                     }
@@ -101,7 +104,7 @@ int main(int argc, char **argv)
               }
               else
               {
-                std::cout << "Enter, chislo, zasranetz!";
+                std::cout << "Enter, chislo, please!";
               }
               
                  
@@ -159,7 +162,7 @@ int main(int argc, char **argv)
             switch (var2)
             {
               case 'l':{
-                std::cout << "Dropping down your govnowheels \n";
+                std::cout << "Dropping down robowheels \n";
                 goal.demo_dropdown_wheels = true;
                 ac.sendGoal(goal);
 
@@ -177,7 +180,7 @@ int main(int argc, char **argv)
                 std::cout << "\n\n ";
                 break;}
               case 'u':{
-                std::cout << "Lifting your govnowheels \n";
+                std::cout << "Lifting your robowheels \n";
                 goal.demo_dropdown_wheels = false;
                 ac.sendGoal(goal);
 
@@ -326,7 +329,11 @@ void maneuvre_mode()
 // checking string for int (if letters, words, signed numbers - it will return false)
 bool is_number(const std::string& s)
 {
-    std::string::const_iterator it = s.begin();
-    while (it != s.end() && std::isdigit(*it)) ++it;
+        std::string::const_iterator it = s.begin();
+    if ((*it == '-') || (std::isdigit(*it)))
+    {
+      ++it;
+      while (it != s.end() && std::isdigit(*it)) ++it;
     return !s.empty() && it == s.end();
+    }  
 }
