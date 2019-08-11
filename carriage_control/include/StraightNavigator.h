@@ -13,9 +13,17 @@ class PoseGetter{
     public:
         virtual geometry_msgs::Pose getCurrentPose() = 0;
 };
+class Interrupt{
+    public:
+        virtual bool isInterruptCalled() = 0;
+        //provides information of where should robot go upon receiving interrupts
+        virtual void setInterruptExecuted() = 0;
+        virtual geometry_msgs::PoseStamped getInterruptInfo() = 0;
+};
 
 class StraightNavigator{
     private:
+        bool was_interrupt_already_called_ = false;
         geometry_msgs::Pose current;
         std::vector<nav_msgs::Odometry> vec_of_states_;
         //-------_!!!!!!!!!!!!_-------стремная проблема может вознукнуть с path_
@@ -23,6 +31,7 @@ class StraightNavigator{
         ros::Publisher * command_publisher_;
         char axis;
         PoseGetter* pose_getter_; //pointer to a function that get current position
+        Interrupt* interruptor_; //helps us understand if interrupt was requested
         double a_max_; //max acceleration;
         double v_cruise_; //max velocity;
         double short_distance_; //if distance between poses is less/equal to this distance
@@ -38,8 +47,10 @@ class StraightNavigator{
         bool verifyLongDistance();
         void updatePose();
         void cleanPath();
+        void interruptCB();
         geometry_msgs::PoseStamped getEndPose();
     public:
+        void setInterrupt(Interrupt* interruptor);
         void setFrequency(double freq);
         void setSamplingTime(double t);
         StraightNavigator(double frequency, double max_vel, double a_max);
@@ -54,5 +65,6 @@ class StraightNavigator{
         void setCurrentPoseGetter(PoseGetter* pose_getter);
         void setAxis(char axis);
         void centralize();
+        
 };
 #endif

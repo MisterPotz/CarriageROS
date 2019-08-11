@@ -1,15 +1,7 @@
 #include <actionlib/client/simple_action_client.h>
-#include <actionlib/client/terminal_state.h>
 #include <carriage_control/carriageAction.h>
-#include <boost/thread.hpp>
 #include <cctype>   // для функции isdigit
 #include <cstdlib>  // для функции atoi
-
-// Here is a simple function for spinning a thread that will be used later in the code. This thread will spin the ros node in the background.
-void spinThread()
-{
-  ros::spin();
-}
 
 void menu();
 void steering_mode();
@@ -24,10 +16,9 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "client_node");
 
       // create the action client
-    actionlib::SimpleActionClient<carriage_control::carriageAction> ac("carriage_server"); 
-
+    actionlib::SimpleActionClient<carriage_control::carriageAction> ac("carriage_server", true); 
       // Here the thread is created and the ros node is started spinning in the background. By using this method you can create multiple threads for your action client if needed.
-    boost::thread spin_thread(&spinThread);
+    //boost::thread spin_thread(&spinThread);
     
     ROS_INFO("Waiting for action server to start.");
     ac.waitForServer();
@@ -91,7 +82,7 @@ int main(int argc, char **argv)
                       goal.y_cell = Ycell;
                       cancelDemoTasks(goal);
                       ac.sendGoal(goal);
-
+                      
                       //wait for the action to return
                       bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
 
@@ -137,6 +128,7 @@ int main(int argc, char **argv)
               std::cout << "\n\n ";
               break;}
             case 'c':{
+              ac.cancelGoal();
               std::cout << "Cancelling operation! \n";
               std::cout << "\n\n ";
               break;}
@@ -204,6 +196,7 @@ int main(int argc, char **argv)
                 std::cout << "\n\n ";
                 break;}
               case 'c':{
+                ac.cancelGoal();
                 std::cout << "Cancelling operation! \n";
                 std::cout << "\n\n ";
                 break;}
@@ -251,6 +244,8 @@ int main(int argc, char **argv)
                 std::cout << "\n\n ";
                 break;}
               case 'c':{
+                ac.cancelGoal();
+      
                 std::cout << "Cancelling operation! \n";
                 std::cout << "\n\n ";
                 break;}
@@ -286,8 +281,6 @@ int main(int argc, char **argv)
     
   // shutdown the node and join the thread back before exiting
   ros::shutdown();
-  spin_thread.join();
-
   //exit
   return 0;
 

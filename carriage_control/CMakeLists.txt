@@ -154,6 +154,7 @@ add_executable(carriage_client src/carriage_client.cpp)
 #add_dependencies(straight_navigator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(carriage_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(carriage_client ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 #add_dependencies(carriage_server_main ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
@@ -169,6 +170,7 @@ target_link_libraries(carriage_server
 target_link_libraries(carriage_client
   ${catkin_LIBRARIES}
 )
+
 # target_link_libraries(carriage_server_main
 #   ${catkin_LIBRARIES}
 # )

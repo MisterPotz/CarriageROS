@@ -13,7 +13,7 @@ StraightNavigator::StraightNavigator(double freq, double max_vel, double a_max)
     a_max_ = a_max;
     ROS_INFO("Max acceleration: %f", a_max_);
     path_.poses = std::vector<geometry_msgs::PoseStamped>(2);
-    vec_of_states_ = std::vector<nav_msgs::Odometry>(100000);
+    vec_of_states_ = std::vector<nav_msgs::Odometry>(10000);
     //calculating criterion by which we tell what to use: triangular profile or trapezoidal one
     calculateShortDistance();
     //reserving some space in vector of poses in advance
@@ -181,6 +181,13 @@ void StraightNavigator::navigate(){
     ros::Rate loop_rate(frequency_);
     ROS_INFO("\tStarting action. Pub freq: %f", frequency_);
     for (int i = 0; i < size; i++){
+        //checking for preempt requests
+        if (!was_interrupt_already_called_ && interruptor_->isInterruptCalled() ){
+            was_interrupt_already_called_ = true;
+            //executing callback
+            interruptCB();
+            return;
+        }
         des_state.linear.x = vec_of_states_[i].twist.twist.linear.x;
         (*command_publisher_).publish(des_state);
         //here can be another publisher for twist in case of more complex moving
@@ -237,6 +244,10 @@ void StraightNavigator::updatePose(){
     current.orientation = temp.orientation;
 }
 void StraightNavigator::centralize(){
+    geometry_msgs::Twist msg;
+    //stopping robot (just in case)
+    msg.linear.x = 0;
+    command_publisher_->publish(msg);
     //getting current pose
     updatePose();
     double *current_value;
@@ -256,17 +267,6 @@ void StraightNavigator::centralize(){
     double speed = abs(current_err)/ sleeping_time * speed_sign;
     ROS_INFO("\t\t Current pos: %f, goal pos: %f, difference: %f, given error: %f", *current_value, goal_point, current_err, error); 
     do{
-        // cleanPath();
-        // geometry_msgs::PoseStamped pose;
-        // //setting starting pose
-        // pose.pose = current;
-        // setStartPose(pose);
-        // //setting ending pose
-        // pose.pose = saved_goal;
-        // setEndPose(pose);
-        //build_traj();
-        //navigate();
-        geometry_msgs::Twist msg;
         msg.linear.x = speed;
         command_publisher_->publish(msg);
         wait.sleep();
@@ -289,4 +289,32 @@ void StraightNavigator::setAxis(char ch){
 }
 geometry_msgs::PoseStamped StraightNavigator::getEndPose(){
     return path_.poses[1];
+}
+void StraightNavigator::setInterrupt(Interrupt* interruptor){
+    interruptor_ = interruptor;
+}
+void StraightNavigator::interruptCB(){
+    geometry_msgs::Twist twist;
+    //stopping robot
+    twist.linear.x = 0;
+    command_publisher_->publish(twist);
+    ROS_INFO("Interrupt callback was called");
+    geometry_msgs::PoseStamped goal;
+    goal = interruptor_->getInterruptInfo();
+    ROS_INFO("NEW INTERRUPT GOAL: x:%f, y:%f", goal.pose.position.x, goal.pose.position.y);
+    //cleaning path
+    cleanPath();
+    //updating current position
+    updatePose();
+    //setting destination
+    setEndPose(goal);
+    goal.pose = current;
+    setStartPose(goal);
+    build_traj();
+    //interruptor_->setInterruptExecuted();
+    navigate();
+    //centralizing at end pose
+    centralize();
+    ROS_INFO("Interrupt callback was executed");
+    was_interrupt_already_called_ = false;
 }

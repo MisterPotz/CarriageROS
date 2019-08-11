@@ -37,7 +37,7 @@ struct WheelSet{
     char axis;
 };
 //inhereting interface so navigation class can get current position
-class Carriage_Server : public PoseGetter{
+class Carriage_Server : public PoseGetter, public Interrupt{
     public:
         virtual geometry_msgs::Pose getCurrentPose();
         struct Cell{
@@ -52,7 +52,12 @@ class Carriage_Server : public PoseGetter{
         ros::NodeHandle& getNodeHandle();
         double getCellCize();
         void setTimeControl(TimeControl* time_control);
+        virtual bool isInterruptCalled();
+        virtual geometry_msgs::PoseStamped getInterruptInfo();
+        virtual void setInterruptExecuted();
 private:
+        bool was_preempt_requested = false;
+
         //executes the cell_stack order
         bool moveRobot2Cell();
         //wheel_parameters
@@ -87,7 +92,8 @@ private:
         void getCell();
         void initializeVars();
         void registerCallbacks();
-        void goalCB();
+        void goalCB(const carriageGoalConstPtr &msg);
+        void preemptCB();
         //fills cell_stack to build a plan to the goal cell from start cell
         void orderCells(Cell start, Cell goal);
         void setWheelsUp(WheelSet& wheel_set);
@@ -108,6 +114,7 @@ private:
         void cleanStack();
         //orders a circle returning to starting position
         void orderCircleCells();
+        void setPreempt(bool);
 };
 };
 

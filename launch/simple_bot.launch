@@ -41,7 +41,7 @@
   <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
     output="screen"  args="--namespace=/bot 1y_position_controller 2y_position_controller 3y_position_controller
     4y_position_controller 5x_position_controller 6x_position_controller 7x_position_controller 8x_position_controller joint_state_controller"/>
-  <node name="carriage_server" pkg="carriage_control" type="carriage_server"/>
+  <!-- <node name="carriage_server" pkg="carriage_control" type="carriage_server"/> -->
   <!-- node for twist commands from keyboard, runs in the same terminal -->
   <!--node name="teleop" pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py"/-->
 

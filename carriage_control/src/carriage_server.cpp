@@ -14,11 +14,12 @@ void carriage_control::Carriage_Server::setTimeControl(carriage_control::TimeCon
 }
 carriage_control::Carriage_Server::Carriage_Server(std::string name, std::string _robot_name,
     std::string _base_name, float _cell_size) :
-    ac(nh, name, false),
+    ac(nh, name, boost::bind(&carriage_control::Carriage_Server::goalCB, this, _1),false),
     action_name(name), robot_name(_robot_name), base_name(_base_name), cell_size(_cell_size)
   {
     nav_manager_ = new StraightNavigator(80, 1.4, 0.6);
     nav_manager_->setCurrentPoseGetter(this);
+    nav_manager_->setInterrupt(this);
     initializeVars();
     registerCallbacks();
     cleanStack();
@@ -31,7 +32,8 @@ void carriage_control::Carriage_Server::initializeVars(){
 }
 
 void carriage_control::Carriage_Server::registerCallbacks(){
-  ac.registerGoalCallback(boost::bind(&carriage_control::Carriage_Server::goalCB, this));
+  ac.registerPreemptCallback(boost::bind(&carriage_control::Carriage_Server::preemptCB,this));
+  //ac.registerGoalCallback(boost::bind(&carriage_control::Carriage_Server::goalCB, this));
 }
 void carriage_control::Carriage_Server::getCell(){
     getModelPosition();
@@ -158,7 +160,13 @@ bool carriage_control::Carriage_Server::moveRobot2Cell(){
         pose_stamped.pose.position.y = end_pos.y;
         nav_manager_->setEndPose(pose_stamped);
         nav_manager_->build_traj();
+        //navigate part is long, so inside it there is a listener to interrupts
         nav_manager_->navigate();
+        //must check for interrupts after navigate
+        if (isInterruptCalled()){
+          fixRobot();
+          return false;
+        }
         time_control_->wait();
         ROS_INFO("\t Trajectory finished. Initiating centralizing.");
         nav_manager_->centralize();
@@ -187,13 +195,12 @@ bool carriage_control::Carriage_Server::checkGoal(Cell c){
   else
     return true;
 }
-void carriage_control::Carriage_Server::goalCB(){
+void carriage_control::Carriage_Server::goalCB(const carriage_control::carriageGoalConstPtr &goal){
   cleanStack();
   getCell();
-  if (ac.isActive()){
+  if (!ac.isActive()){
     return;
   }
-  carriage_control::carriageGoalConstPtr goal =  ac.acceptNewGoal();
   Cell goal_c; goal_c.x = goal->x_cell; goal_c.y = goal->y_cell;
   if (goal_c.x == 0 && goal_c.y ==0){
     goal_c.x = 1;
@@ -220,6 +227,10 @@ void carriage_control::Carriage_Server::goalCB(){
   }
   else{
     if (executeDemoTaskFlag){
+      return;
+    }
+    if (isInterruptCalled()){
+      setPreempt(false);
       return;
     }
     result_.success = false;
@@ -276,4 +287,31 @@ void carriage_control::Carriage_Server::orderCircleCells(){
   //one direction
   orderCells(a,b);
   
+}
+bool carriage_control::Carriage_Server::isInterruptCalled(){
+  return was_preempt_requested;
+}
+geometry_msgs::PoseStamped carriage_control::Carriage_Server::getInterruptInfo(){
+  geometry_msgs::PoseStamped pose;
+  //let's find the cell we are currently located and get its center accurate position
+  getCell();
+  pose.pose.position.x = getCellCenter(cell).x;
+  pose.pose.position.y = getCellCenter(cell).y;
+  //we've just written the accurate coordinates of the cell center
+  //let's pass'em to StraightNavigator instance
+  return pose;
+  
+}
+void carriage_control::Carriage_Server::preemptCB(){
+  result_.success = false;
+  setPreempt(true);
+  ac.setPreempted(result_, "Cancelled");
+  ROS_INFO("Got preempt task, executing");
+}
+void carriage_control::Carriage_Server::setInterruptExecuted(){
+  setPreempt(false);
+}
+
+void carriage_control::Carriage_Server::setPreempt(bool status){
+  was_preempt_requested = status;
 }
