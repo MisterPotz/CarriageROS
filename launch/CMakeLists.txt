@@ -12,7 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
-   diff_drive_controller
+  diff_drive_controller
   effort_controllers
   joint_state_controller
   joint_trajectory_controller
