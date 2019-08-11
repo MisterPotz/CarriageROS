@@ -8,9 +8,17 @@ project(launch)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  gazebo_ros_control
   roscpp
   rospy
   std_msgs
+   diff_drive_controller
+  effort_controllers
+  joint_state_controller
+  joint_trajectory_controller
+  position_controllers
+  velocity_controllers
+  
 )
 
 ## System dependencies are found with CMake's conventions
