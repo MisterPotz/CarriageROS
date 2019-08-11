@@ -7,7 +7,7 @@ int main(int argc, char** argv){
   //when we created crrg_srvr we instantiated and initialized nodehandle
   //now we may create timecontrol class which involves ros::Rate. it cannot be created inside a class
   //which itself creates nodehandle (ros::rate requires nodehandle to be created first)
-  carriage_control::TimeControl time_control(0.5);
+  carriage_control::TimeControl time_control(1.0);//pass in frequency
   crrg_srvr.setTimeControl(&time_control);
   ros::NodeHandle& nh =  crrg_srvr.getNodeHandle();
   carriage_control::WheelSet along_y;

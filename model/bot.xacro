@@ -141,7 +141,7 @@
         <parent link="base_link"/>
         <child link="btwn_base_and_${name}wheel"/>
         <!-- <child link="${name}_wheel"/> -->
-        <limit effort="200.0" lower="${-below_offset_btwn_base_wheel-wheel_diameter}" upper="0.01" velocity="0.5"/>
+        <limit effort="200.0" lower="${-below_offset_btwn_base_wheel-wheel_diameter}" upper="0.01" velocity="2"/> 
         <xacro:insert_block name="joint_origin"/>
         <axis xyz="0 0 1" rpy="0 0 0" />
         <!-- little damping reduces some oscillations a bit -->
@@ -149,7 +149,7 @@
         <!-- lower and upper limits should be slightly less than those mentioned in <joint> tag
             k_velocity should be small - less oscillations, k_position can be a bit higher but it influences
             more on speed of joint moving than on oscillations -->
-        <safety_controller soft_lower_limit="-0.8" soft_upper_limit="0.1"  k_velocity="0.001" k_position="0.2"/>
+        <safety_controller soft_lower_limit="-0.8" soft_upper_limit="0.1"  k_velocity="0.01" k_position="0.2"/>
       </joint>
     <link name="${name}_wheel">
         <visual>

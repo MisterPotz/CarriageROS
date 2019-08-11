@@ -17,7 +17,7 @@ carriage_control::Carriage_Server::Carriage_Server(std::string name, std::string
     ac(nh, name, false),
     action_name(name), robot_name(_robot_name), base_name(_base_name), cell_size(_cell_size)
   {
-    nav_manager_ = new StraightNavigator(80, 1, 0.5);
+    nav_manager_ = new StraightNavigator(80, 1.4, 0.6);
     nav_manager_->setCurrentPoseGetter(this);
     initializeVars();
     registerCallbacks();
