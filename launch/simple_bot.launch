@@ -8,7 +8,7 @@
   <param name="use_gui" value="$(arg gui)"/>
   <!--param name="robot_description" command="$(find xacro)/xacro '$(find bot)/src/model/bot.xacro'"/-->
   <param name="robot_description" command="$(find xacro)/xacro '$(find model)/bot.xacro'  meshDirectory:=$(arg meshDirectoryPath)"/>
-  <param name="cells_description_sdf" textfile="$(find model)/cells.sdf"/>
+  <param name="cells_description_sdf" textfile="$(find model)/cells_10.sdf"/>
   
 
   <!-- Load all available controllers -->
