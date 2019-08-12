@@ -82,7 +82,7 @@ int main(int argc, char **argv)
                       goal.y_cell = Ycell;
                       cancelDemoTasks(goal);
                       ac.sendGoal(goal);
-                      
+                      break;
                       //wait for the action to return
                       bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
 
@@ -114,7 +114,7 @@ int main(int argc, char **argv)
               goal.y_cell = 0;
               cancelDemoTasks(goal);
               ac.sendGoal(goal);
-
+              break;
               //wait for the action to return
                 bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
 
@@ -164,7 +164,7 @@ int main(int argc, char **argv)
                 cancelDemoTasks(goal);
                 goal.demo_dropdown_wheels = true;
                 ac.sendGoal(goal);
-
+                break;
                 //wait for the action to return
                 bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
 
@@ -183,7 +183,7 @@ int main(int argc, char **argv)
                 cancelDemoTasks(goal);
                 goal.demo_lift_wheels=true;
                 ac.sendGoal(goal);
-
+                break;
                 //wait for the action to return
                 bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
 
@@ -231,7 +231,7 @@ int main(int argc, char **argv)
                 cancelDemoTasks(goal);
                 goal.demo_ride_circle = true;
                 ac.sendGoal(goal);
-
+                break;
                 //wait for the action to return
                 bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
 
