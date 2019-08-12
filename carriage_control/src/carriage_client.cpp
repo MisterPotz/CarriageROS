@@ -90,10 +90,12 @@ int main(int argc, char **argv)
                       {
                         actionlib::SimpleClientGoalState state = ac.getState();
                         ROS_INFO("Action finished: %s",state.toString().c_str());
+                        break;
                       }
                       else
                         ROS_INFO("Action did not finish before the time out.");
                       //wait for the action to return
+                      break;
                     } 
               }
               else
